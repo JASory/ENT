@@ -1,0 +1,17 @@
+[package]
+name = "number-theory"
+version = "0.0.0"
+edition = "2021"
+authors = ["J.A Sory j_a_sory@protonmail.com"]
+description = "Fast primality, factorization and elementary number theory for primitive types"
+keywords = ["primes", "factoring", "numbertheory"]
+homepage   = "https://rust-cas.org"
+repository = "https://github.com/JASory/ENT"
+license    = "MIT"
+categories = ["algorithms", "mathematics"]
+readme      = "Readme.md"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
