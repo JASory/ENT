@@ -2,7 +2,7 @@
 name = "number-theory"
 version = "0.0.0"
 edition = "2021"
-authors = ["J.A Sory j_a_sory@protonmail.com"]
+authors = ["J.A Sory jasory@rust-cas.org"]
 description = "Fast primality, factorization and elementary number theory for primitive types"
 keywords = ["primes", "factoring", "numbertheory"]
 homepage   = "https://rust-cas.org"
