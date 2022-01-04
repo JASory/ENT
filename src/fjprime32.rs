@@ -1,5 +1,5 @@
 /*
-Forisek Jancina implementation for 0;2^32
+Forisek Jancina implementation for 0;2^8
 */
 
 use crate::fourbytes::sprp_32;

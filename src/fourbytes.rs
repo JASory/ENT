@@ -1,5 +1,5 @@
 use crate::traits::NumberTheory;
-use crate::twobytes::PRIMELIST;
+use crate::primes::PRIMELIST;
 
 use crate::fjprime32::fjprime_32;
 
@@ -67,10 +67,10 @@ impl NumberTheory for u32{
        self.factor().iter().step_by(2).product::<u32>()
    }
    
- fn k_free(&self, k: Self)->bool{
+ fn k_free(&self, k: &Self)->bool{
        let factors = self.factor();
       for i in 0..factors.len(){
-        if factors[i] == k{
+        if factors[i] == *k{
           if i == 0{
             ();
           }
@@ -83,7 +83,7 @@ impl NumberTheory for u32{
    }
  
  
- fn gcd(&self, other: Self) -> Self{
+ fn gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -118,20 +118,20 @@ impl NumberTheory for u32{
        (self/denominator)*numerator
  }
  
- fn quadratic_residue(&self, n: Self) -> Self{
-     ((*self as u64 * *self as u64) % n as u64) as u32
+ fn quadratic_residue(&self, n: &Self) -> Self{
+     ((*self as u64 * *self as u64) % *n as u64) as u32
  }
  
- fn mul_mod(&self, other: Self, n: Self) -> Self{
-    ((*self as u64 * other as u64) % n as u64) as u32
+ fn mul_mod(&self, other: &Self, n: &Self) -> Self{
+    ((*self as u64 * *other as u64) % *n as u64) as u32
  }
  
- fn mod_pow(&self, p: Self, modulus: Self)-> Self{  
+ fn mod_pow(&self, p: &Self, modulus: &Self)-> Self{  
 
   let mut z = 1u64;
   let mut base = *self as u64;
-  let n = modulus as u64;
-  let mut pow = p;
+  let n = modulus.clone() as u64;
+  let mut pow = p.clone();
   if pow ==0 {
     return z as u32
   }
@@ -174,23 +174,23 @@ impl NumberTheory for i32{
      (self.abs() as u32).radical() as i32
   }
   
-  fn k_free(&self, k: Self) -> bool{
-      (self.abs() as u32).k_free(k.abs() as u32)
+  fn k_free(&self, k: &Self) -> bool{
+      (self.abs() as u32).k_free(&(k.abs() as u32))
   }
   
-  fn gcd(&self, other: Self) -> Self{
-      (self.abs() as u32).gcd(other.abs() as u32) as i32
+  fn gcd(&self, other: &Self) -> Self{
+      (self.abs() as u32).gcd(&(other.abs() as u32)) as i32
   }
   
   fn euler_totient(&self) -> Self{
      (self.abs() as u32).euler_totient() as i32
   }
   
-  fn quadratic_residue(&self, n: Self) -> Self{
-     (self.abs() as u32).quadratic_residue(n.abs() as u32) as i32
+  fn quadratic_residue(&self, n: &Self) -> Self{
+     (self.abs() as u32).quadratic_residue(&(n.abs() as u32)) as i32
   }
   
-  fn mul_mod(&self, other: Self, n: Self) -> Self{
+  fn mul_mod(&self, other: &Self, n: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      let mut modulo = n.abs() ;
@@ -201,15 +201,15 @@ impl NumberTheory for i32{
      if b < 0i32{
         b = modulo + b;
      }
-     (a as u32).mul_mod(b as u32, modulo as u32) as i32
+     (a as u32).mul_mod(&(b as u32), &(modulo as u32)) as i32
   }
   
-  fn mod_pow(&self, pow: Self, n: Self) -> Self{
+  fn mod_pow(&self, pow: &Self, n: &Self) -> Self{
    let mut a = self.clone();
    if a < 0i32{
       a = n.abs() + self
    }
-     (a as u32).mod_pow( pow.abs() as u32, n.abs() as u32) as i32
+     (a as u32).mod_pow( &(pow.abs() as u32), &(n.abs() as u32)) as i32
   }
 }
 
@@ -236,7 +236,7 @@ impl NumberTheory for i32{
   while d == 1 {
   x = mod_sqr1_32(x,n);
   y = mod_sqr1_32(mod_sqr1_32(y,n),n)%n;
-  d = delta_u32(x,y).gcd(n)
+  d = delta_u32(x,y).gcd(&n)
    }
    d
 }
@@ -244,12 +244,12 @@ impl NumberTheory for i32{
 pub fn sprp_32(p: u32, base: u32)->bool{// checks if base^p = 1 mod p  or base^(d*2^n)= -1 for some n  
      let zeroes = (p-1).trailing_zeros() as u32; // Breaks number down to p= d*2^n -1
      let d = (p-1)/ (1<<zeroes);
-     let mut x = base.mod_pow(d,p); // base^d mod p
+     let mut x = base.mod_pow(&d,&p); // base^d mod p
      if x == 1u32 || x==p-1{   // checks if base^p = 1 mod p  or base^(d*2^n)= -1
        return true
        }
     for _ in 0..zeroes-1{// checks for all d*2^zeroes. One is subtracted since d*2^n was already checked above
-     x = x.quadratic_residue(p);
+     x = x.quadratic_residue(&p);
      if x == p-1 {       // if any d*2^zeroes = p-1  then it passes
        return true
      }

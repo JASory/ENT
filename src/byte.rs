@@ -1,5 +1,5 @@
 use crate::traits::NumberTheory;
-
+use crate::primes::PRIMELIST;
 
 impl NumberTheory for u8{
 
@@ -7,9 +7,9 @@ impl NumberTheory for u8{
    if *self == 1 || *self == 0 {
      return false
    }
-   for i in [2,3,5,7,11,13].iter(){
-    if self == i {return true}
-    if self%i == 0 {return false}
+   for i in PRIMELIST[..6].iter(){
+    if *self == *i as u8 {return true}
+    if self%*i as u8 == 0 {return false}
    }
    return true
  }
@@ -25,20 +25,14 @@ impl NumberTheory for u8{
           factors.push(2);
           factors.push(twofactors as u8);
        }
-       /*
-       if n.is_prime(){
-        factors.push(n);
-        factors.push(1);
-         return factors
-     }
-       */
-       for i in [3,5,7,11,13].iter(){ // strips out small primes
-          if n%i==0{
-            factors.push(*i);
+      
+       for i in PRIMELIST[1..6].iter(){ // strips out small primes
+          if n%*i as u8==0{
+            factors.push(*i as u8);
             let mut count = 0u8;
-          while n%i==0 {
+          while n%*i as u8==0 {
             count +=1;
-            n/=i;
+            n/=*i as u8;
           }
           factors.push(count);
           }
@@ -54,10 +48,10 @@ impl NumberTheory for u8{
        self.factor().iter().step_by(2).product::<u8>()
    }
    
- fn k_free(&self, k: Self)->bool{
+ fn k_free(&self, k: &Self)->bool{
        let factors = self.factor();
       for i in 0..factors.len(){
-        if factors[i] == k{
+        if factors[i] == *k{
           if i == 0{
             ();
           }
@@ -70,7 +64,7 @@ impl NumberTheory for u8{
    }
  
  
- fn gcd(&self, other: Self) -> Self{
+ fn gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -105,20 +99,20 @@ impl NumberTheory for u8{
        (self/denominator)*numerator
  }
  
- fn quadratic_residue(&self, n: Self) -> Self{
-     ((*self as u16 * *self as u16) % n as u16) as u8
+ fn quadratic_residue(&self, n: &Self) -> Self{
+     ((*self as u16 * *self as u16) % *n as u16) as u8
  }
  
- fn mul_mod(&self, other: Self, n: Self) -> Self{
-    ((*self as u16 * other as u16) % n as u16) as u8
+ fn mul_mod(&self, other: &Self, n: &Self) -> Self{
+    ((*self as u16 * *other as u16) % *n as u16) as u8
  }
  
- fn mod_pow(&self, p: u8, modulus: u8)-> u8{  
+ fn mod_pow(&self, p: &Self, modulus: &Self)-> u8{  
 
   let mut z = 1u16;
   let mut base = *self as u16;
-  let n = modulus as u16;
-  let mut pow = p;
+  let n = modulus.clone() as u16;
+  let mut pow = p.clone();
   if pow ==0 {
     return z as u8
   }
@@ -161,23 +155,23 @@ impl NumberTheory for i8{
      (self.abs() as u8).radical() as i8
   }
   
-  fn k_free(&self, k: Self) -> bool{
-      (self.abs() as u8).k_free(k.abs() as u8)
+  fn k_free(&self, k: &Self) -> bool{
+      (self.abs() as u8).k_free(&(k.abs() as u8))
   }
   
-  fn gcd(&self, other: Self) -> Self{
-      (self.abs() as u8).gcd(other.abs() as u8) as i8
+  fn gcd(&self, other: &Self) -> Self{
+      (self.abs() as u8).gcd( &(other.abs() as u8)) as i8
   }
   
   fn euler_totient(&self) -> Self{
      (self.abs() as u8).euler_totient() as i8
   }
   
-  fn quadratic_residue(&self, n: Self) -> Self{
-     (self.abs() as u8).quadratic_residue(n.abs() as u8) as i8
+  fn quadratic_residue(&self, n: &Self) -> Self{
+     (self.abs() as u8).quadratic_residue(&(n.abs() as u8)) as i8
   }
   
-  fn mul_mod(&self, other: Self, n: Self) -> Self{
+  fn mul_mod(&self, other: &Self, n: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      let mut modulo = n.abs() ;
@@ -188,14 +182,14 @@ impl NumberTheory for i8{
      if b < 0i8{
         b = modulo + b;
      }
-     (a as u8).mul_mod(b as u8, modulo as u8) as i8
+     (a as u8).mul_mod(&(b as u8), &(modulo as u8)) as i8
   }
   
-  fn mod_pow(&self, pow: Self, n: Self) -> Self{
+  fn mod_pow(&self, pow: &Self, n: &Self) -> Self{
    let mut a = self.clone();
    if a < 0i8{
       a = n.abs() + self
    }
-     (a as u8).mod_pow( pow.abs() as u8, n.abs() as u8) as i8
+     (a as u8).mod_pow( &(pow.abs() as u8), &(n.abs() as u8)) as i8
   }
 }

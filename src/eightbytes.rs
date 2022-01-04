@@ -1,5 +1,5 @@
 use crate::traits::NumberTheory;
-use crate::twobytes::PRIMELIST;
+use crate::primes::PRIMELIST;
 
 use crate::fjprime64::fjprime_64;
 
@@ -53,7 +53,7 @@ impl NumberTheory for u64{
        
        
     while n != 1{
-         println!("called rho");
+         //println!("called rho");
           let k = rho_64(n);
            factors.push(k);
            let mut count = 0u64;
@@ -70,10 +70,10 @@ impl NumberTheory for u64{
        self.factor().iter().step_by(2).product::<u64>()
    }
    
- fn k_free(&self, k: Self)->bool{
+ fn k_free(&self, k: &Self)->bool{
        let factors = self.factor();
       for i in 0..factors.len(){
-        if factors[i] == k{
+        if factors[i] == *k{
           if i == 0{
             ();
           }
@@ -86,7 +86,7 @@ impl NumberTheory for u64{
    }
  
  
- fn gcd(&self, other: Self) -> Self{
+ fn gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -121,20 +121,20 @@ impl NumberTheory for u64{
        (self/denominator)*numerator
  }
  
- fn quadratic_residue(&self, n: Self) -> Self{
-     ((*self as u128 * *self as u128) % n as u128) as u64
+ fn quadratic_residue(&self, n: &Self) -> Self{
+     ((*self as u128 * *self as u128) % *n as u128) as u64
  }
  
- fn mul_mod(&self, other: Self, n: Self) -> Self{
-    ((*self as u128 * other as u128) % n as u128) as u64
+ fn mul_mod(&self, other: &Self, n: &Self) -> Self{
+    ((*self as u128 * *other as u128) % *n as u128) as u64
  }
  
- fn mod_pow(&self, p: Self, modulus: Self)-> Self{  
+ fn mod_pow(&self, p: &Self, modulus: &Self)-> Self{  
 
   let mut z = 1u128;
   let mut base = *self as u128;
-  let n = modulus as u128;
-  let mut pow = p;
+  let n = modulus.clone() as u128;
+  let mut pow = p.clone();
   if pow ==0 {
     return z as u64
   }
@@ -177,23 +177,23 @@ impl NumberTheory for i64{
      (self.abs() as u64).radical() as i64
   }
   
-  fn k_free(&self, k: Self) -> bool{
-      (self.abs() as u64).k_free(k.abs() as u64)
+  fn k_free(&self, k: &Self) -> bool{
+      (self.abs() as u64).k_free(&(k.abs() as u64))
   }
   
-  fn gcd(&self, other: Self) -> Self{
-      (self.abs() as u64).gcd(other.abs() as u64) as i64
+  fn gcd(&self, other: &Self) -> Self{
+      (self.abs() as u64).gcd(&(other.abs() as u64)) as i64
   }
   
   fn euler_totient(&self) -> Self{
      (self.abs() as u64).euler_totient() as i64
   }
   
-  fn quadratic_residue(&self, n: Self) -> Self{
-     (self.abs() as u64).quadratic_residue(n.abs() as u64) as i64
+  fn quadratic_residue(&self, n: &Self) -> Self{
+     (self.abs() as u64).quadratic_residue(&(n.abs() as u64)) as i64
   }
   
-  fn mul_mod(&self, other: Self, n: Self) -> Self{
+  fn mul_mod(&self, other: &Self, n: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      let mut modulo = n.abs() ;
@@ -204,15 +204,15 @@ impl NumberTheory for i64{
      if b < 0i64{
         b = modulo + b;
      }
-     (a as u64).mul_mod(b as u64, modulo as u64) as i64
+     (a as u64).mul_mod(&(b as u64), &(modulo as u64)) as i64
   }
   
-  fn mod_pow(&self, pow: Self, n: Self) -> Self{
+  fn mod_pow(&self, pow: &Self, n: &Self) -> Self{
    let mut a = self.clone();
    if a < 0i64{
       a = n.abs() + self
    }
-     (a as u64).mod_pow( pow.abs() as u64, n.abs() as u64) as i64
+     (a as u64).mod_pow( &(pow.abs() as u64), &(n.abs() as u64)) as i64
   }
 }
 
@@ -238,7 +238,7 @@ impl NumberTheory for i64{
   while d == 1 {
   x = mod_sqr1_64(x,n);
   y = mod_sqr1_64(mod_sqr1_64(y,n),n)%n;
-  d = delta_u64(x,y).gcd(n)
+  d = delta_u64(x,y).gcd(&n)
    }
    d
 }
@@ -246,12 +246,12 @@ impl NumberTheory for i64{
 pub fn sprp_64(p: u64, base: u64)->bool{// checks if base^p = 1 mod p  or base^(d*2^n)= -1 for some n  
      let zeroes = (p-1).trailing_zeros() as u64; // Breaks number down to p= d*2^n -1
      let d = (p-1)/ (1<<zeroes);
-     let mut x = base.mod_pow(d,p); // base^d mod p
+     let mut x = base.mod_pow(&d,&p); // base^d mod p
      if x == 1u64 || x==p-1{   // checks if base^p = 1 mod p  or base^(d*2^n)= -1
        return true
        }
     for _ in 0..zeroes-1{// checks for all d*2^zeroes. One is subtracted since d*2^n was already checked above
-     x = x.quadratic_residue(p);
+     x = x.quadratic_residue(&p);
      if x == p-1 {       // if any d*2^zeroes = p-1  then it passes
        return true
      }
