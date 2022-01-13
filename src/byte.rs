@@ -140,7 +140,7 @@ impl NumberTheory for u8{
 }
 
  fn legendre(&self, p: &Self) -> i8 {
-    let k = self.mod_pow((*p-1)>>1, *p);
+    let k = self.mod_pow(&((*p-1)>>1), p);
     if k == 1{return 1};
     if k == *p-1 {return -1};
     return 0
