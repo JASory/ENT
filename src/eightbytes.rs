@@ -1,7 +1,7 @@
-use crate::traits::NumberTheory;
-use crate::primes::PRIMELIST;
+use number_theory::traits::NumberTheory;
+use number_theory::primes::PRIMELIST;
 
-use crate::fjprime64::fjprime_64;
+use number_theory::fjprime64::fjprime_64;
 
 
 
