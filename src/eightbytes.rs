@@ -236,11 +236,11 @@ impl NumberTheory for i64{
   
   
    fn legendre(&self, p: &Self) -> i8 {
-       (self.abs() as u8).legendre(&(p.abs() as u8))
+       (self.abs() as u64).legendre(&(p.abs() as u64))
  }
  
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
-     (self.abs() as u8).checked_legendre(&(p.abs() as u8))
+     (self.abs() as u64).checked_legendre(&(p.abs() as u64))
  }
  
 }
