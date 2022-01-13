@@ -151,7 +151,7 @@ impl NumberTheory for u16{
 }
 
  fn legendre(&self, p: &Self) -> i8 {
-    let k = self.mod_pow((*p-1)>>1, *p);
+    let k = self.mod_pow(&((*p-1)>>1), p);
     if k == 1{return 1};
     if k == *p-1 {return -1};
     return 0
@@ -223,10 +223,10 @@ impl NumberTheory for i16{
   
   
   fn legendre(&self, p: &Self) -> i8 {
-       (self.abs() as u8).legendre(&(p.abs() as u8))
+       (self.abs() as u16).legendre(&(p.abs() as u16))
  }
  
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
-     (self.abs() as u8).checked_legendre(&(p.abs() as u8))
+     (self.abs() as u16).checked_legendre(&(p.abs() as u16))
  }
 }
