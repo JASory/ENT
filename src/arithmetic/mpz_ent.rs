@@ -224,9 +224,9 @@ impl NumberTheory for Mpz{
  fn legendre(&self, p: &Self) -> i8 {
      let mut p_minus = p.clone();
      sub_slice(&mut p_minus.limbs[..], &[1]);
-     let pow = p_minus.euclidean(Mpz::from_u64(2)).0;
+     let pow = p_minus.euclidean(&Mpz::from_u64(2)).0;
      let k = self.mod_pow(&pow,&p);
-    if k == 1{return 1};
+    if k == Mpz::one() {return 1};
     if k == p_minus {return -1};
     return 0
  }
