@@ -1,4 +1,4 @@
-#ENT
+# ENT
 
 Elementary Number Theory for Integers in Rust
 
