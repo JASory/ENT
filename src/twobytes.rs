@@ -1,16 +1,16 @@
 use crate::traits::NumberTheory;
 use crate::primes::PRIMELIST;
-/*
-pub const PRIMELIST: [u16; 54] = [// list of all primes less than 2^8
-           2,  3,  5,   7,  11,  13,  17,  19,  23,  29,  31,
-          37, 41, 43,  47,  53,  59,  61,  67,  71,  73,  79, 
-          83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 
-         139,149,151, 157, 163, 167, 173, 179, 181, 191, 193,  //54
-         197,199,211, 223, 227, 229, 233, 239, 241, 251
-        ];
-*/
+
+ use crate::arithmetic::inlineops::*;
+
 
 impl NumberTheory for u16{
+
+ fn rng() -> Self {(rng_32()>>16) as u16}
+ 
+ fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
 
  fn is_prime(&self)->bool{
    
@@ -170,6 +170,12 @@ impl NumberTheory for u16{
 
 
 impl NumberTheory for i16{
+  
+  fn rng() -> Self {(rng_32()>>16) as i16}
+  
+  fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
   
   fn is_prime(&self) -> bool{
     (self.abs() as u16).is_prime()

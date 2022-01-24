@@ -4,6 +4,12 @@ pub enum Sign{
                 Negative,
 }
 
+impl Default for Sign {
+	fn default() -> Self {
+	Sign::Positive
+	}
+}
+
 impl Sign{
 
 pub(crate) fn neg(&self) -> Sign {

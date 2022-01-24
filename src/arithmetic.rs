@@ -1,4 +1,4 @@
-     mod inlineops;
+pub  mod inlineops;
      mod sliceops;
      mod muldiv;
      mod conversion;

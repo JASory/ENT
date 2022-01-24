@@ -1,12 +1,18 @@
  
  use crate::primes::PRIMELIST;
  use crate::arithmetic::mpz::Mpz;
- 
+ use crate::arithmetic::inlineops::*;
  
  use crate::traits::NumberTheory;
  
  impl NumberTheory for u128 {
  
+  fn rng() -> Self {fuse(rng_64(), rng_64()) }
+  
+  fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
+   
   fn is_prime(&self) -> bool{
      if *self < u64::MAX as u128{
        return (*self as u64).is_prime()
@@ -156,6 +162,12 @@
 }  
 
  impl NumberTheory for i128{
+ 
+ fn rng() -> Self {fuse(rng_64(), rng_64()) as i128}
+ 
+ fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
  
  fn is_prime(&self) -> bool{
     (self.abs() as u128).is_prime()

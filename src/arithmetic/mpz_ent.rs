@@ -9,6 +9,29 @@ use crate::primes::PRIMELIST;
 impl NumberTheory for Mpz{
   
   
+  fn rng() -> Self {Mpz::new(Sign::Positive, vec![rng_64(), rng_64(), rng_64(), rng_64()])}
+  
+  fn euclidean(&self, other:&Self) -> (Self,Self) {
+     if self.sign==Sign::Negative && other.sign == Sign::Negative {
+        let (quo, mut rem) = self.ref_euclidean(other);
+        rem.neg();
+        return (quo,rem)
+     }
+     else if self.sign==Sign::Positive && other.sign == Sign::Negative {
+       let (mut quo, mut rem) = self.ref_euclidean(other);
+        quo.neg();
+        return (quo,rem)
+     }
+     else if self.sign==Sign::Negative && other.sign == Sign::Positive{
+       let (mut quo, mut rem) = self.ref_euclidean(other);
+        quo.neg();
+        rem.neg();
+        return (quo,rem)
+     }
+     
+     self.ref_euclidean(other)
+  }
+  
   fn quadratic_residue(&self, n: &Self) -> Self{
   
      if n == &Mpz::zero(){
@@ -21,7 +44,7 @@ impl NumberTheory for Mpz{
        p = p.add_modinv(&n);
     }
     
-     self.ref_product(&self).euclidean(n).1
+     self.ref_product(&self).ref_euclidean(n).1
   }
   
   
@@ -42,7 +65,7 @@ impl NumberTheory for Mpz{
        q = q.add_modinv(n)
     }
   
-      p.ref_product(&q).euclidean(n).1
+      p.ref_product(&q).ref_euclidean(n).1
     }
   
   fn mod_pow(&self,  y: &Self, n: &Self )->Self{
@@ -62,21 +85,9 @@ impl NumberTheory for Mpz{
     
   
   fn is_prime(&self) -> bool{
- 
-    if self.len() < 2 {return self.to_u64().unwrap().is_prime()}  // if fits into u64, reduce to 64-bit check 
-    if self.is_even(){return false}
-       
-    if self.is_fermat(){return false}
-    
-   for i in PRIMELIST[1..380].iter(){ // apparently optimal on my machine
-     if self.congruence_u64(*i as u64,0){
-       return false
-     }
-   }
+   if self.probable_prime()==false{return false}
    
-   if self.sprp_check(5)==false{return false}
-   
-   return true
+   return self.sprp_check(2)    // 2 more strong fermat checks until Lucas test implemented
  
  }
  
@@ -89,7 +100,7 @@ impl NumberTheory for Mpz{
 
              t = b.clone();
 
-             b = a.euclidean(&b).1;
+             b = a.ref_euclidean(&b).1;
 
              b.normalize();
              a = t;
@@ -104,7 +115,7 @@ impl NumberTheory for Mpz{
      let mut n = self.clone();
      let mut factors : Vec<Self> = vec![];
      let twofactor = n.trailing_zeros();
-     // println!("twos {}", twofactor);
+
      if twofactor > 0{
       n.mut_shr(twofactor as usize);
      factors.push(Mpz::from_u64(2u64));
@@ -153,20 +164,20 @@ impl NumberTheory for Mpz{
        'outer : while n != Mpz::one(){
           
               let k = n.rho_mpz();
-            //  println!("factor found {}", k.to_string());
+
               factors.push(k.clone());
               let mut count = 0u64;
-            // println!("{:?}", n);
+
      'inner : loop {
-            let (inner_quo, inner_rem) = n.euclidean(&k);
-                          //println!("{:?}", n);
+            let (inner_quo, inner_rem) = n.ref_euclidean(&k);
+
              if inner_rem != Mpz::zero(){
                 break 'inner;
              }
              n = inner_quo;
              n.normalize(); // remove ? 
              count+=1;
-        //     println!("{:?}", n.to_string());
+
            }
            factors.push(Mpz::from_u64(count));
 
@@ -175,6 +186,7 @@ impl NumberTheory for Mpz{
             factors.push(Mpz::one());
             break 'outer;
           }
+          
           }
 
           factors
@@ -216,7 +228,7 @@ impl NumberTheory for Mpz{
     numerator = numerator.ref_product(i)
    }
    
-   (self.euclidean(&denominator).0).ref_product(&numerator)
+   (self.ref_euclidean(&denominator).0).ref_product(&numerator)
  
  }
  
@@ -224,7 +236,7 @@ impl NumberTheory for Mpz{
  fn legendre(&self, p: &Self) -> i8 {
      let mut p_minus = p.clone();
      sub_slice(&mut p_minus.limbs[..], &[1]);
-     let pow = p_minus.euclidean(&Mpz::from_u64(2)).0;
+     let pow = p_minus.ref_euclidean(&Mpz::from_u64(2)).0;
      let k = self.mod_pow(&pow,&p);
     if k == Mpz::one() {return 1};
     if k == p_minus {return -1};

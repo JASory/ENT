@@ -1,8 +1,17 @@
 use crate::traits::NumberTheory;
 use crate::primes::PRIMELIST;
 
+ use crate::arithmetic::inlineops::*;
+ 
 impl NumberTheory for u8{
 
+ fn rng() -> Self {(rng_32()>>24) as u8}
+ 
+ fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
+ 
+ 
  fn is_prime(&self)->bool{
    if *self == 1 || *self == 0 {
      return false
@@ -159,6 +168,12 @@ impl NumberTheory for u8{
 
 
 impl NumberTheory for i8{
+  
+  fn rng() -> Self {(rng_32()>>24) as i8}
+  
+  fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
   
   fn is_prime(&self) -> bool{
     (self.abs() as u8).is_prime()

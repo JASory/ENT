@@ -2,10 +2,16 @@ use crate::traits::NumberTheory;
 use crate::primes::PRIMELIST;
 
 use crate::fjprime32::fjprime_32;
-
+use crate::arithmetic::inlineops::*;
 
 
 impl NumberTheory for u32{
+
+ fn rng() -> Self {rng_32() }
+
+ fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
 
  fn is_prime(&self)->bool{
   
@@ -180,6 +186,12 @@ impl NumberTheory for u32{
 
 
 impl NumberTheory for i32{
+  
+  fn rng() -> Self {rng_32() as i32}
+  
+  fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
   
   fn is_prime(&self) -> bool{
     (self.abs() as u32).is_prime()

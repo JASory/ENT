@@ -2,11 +2,17 @@ use crate::traits::NumberTheory;
 use crate::primes::PRIMELIST;
 
 use crate::fjprime64::fjprime_64;
-
+use crate::arithmetic::inlineops::*;
 
 
 impl NumberTheory for u64{
 
+ fn rng() -> Self {rng_64() }
+ 
+ fn euclidean(&self, other: &Self) -> (Self,Self) {
+   (*self/ *other, *self%*other)
+  }
+  
  fn is_prime(&self)->bool{
    
    if *self < u32::MAX as u64 { // tree down to u32 if it fits
@@ -183,6 +189,12 @@ impl NumberTheory for u64{
 
 
 impl NumberTheory for i64{
+  
+  fn rng() -> Self {rng_64() as i64 }
+   
+  fn euclidean(&self, other: &Self) -> (Self,Self) {
+    (*self/ *other, *self%*other)
+  }
   
   fn is_prime(&self) -> bool{
     (self.abs() as u64).is_prime()

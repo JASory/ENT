@@ -14,16 +14,10 @@ pub mod sixteenbytes;
     // computational speed 193.483187015s for primality checks in the interval [0;10^9]
  pub mod arithmetic;
     
-    use crate::traits::NumberTheory;
-    use crate::arithmetic::mpz::Mpz;
-    use crate::arithmetic::sign::Sign;
-   // use crate::arithmetic::inlince
+ pub   use crate::traits::NumberTheory;
+ pub   use crate::arithmetic::mpz::Mpz;
+ pub   use crate::arithmetic::sign::Sign;
+
+  // 203280221primes counted in 565.992596603s
   
- //247330401473104534033686901979090442377579073428791223965108330490992066367285383405085116763961027192036158782418658572232976002286069292939485950791477815115016413693758078
- 
-
-
-
-
-
 

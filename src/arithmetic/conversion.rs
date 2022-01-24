@@ -33,11 +33,20 @@ pub(crate) fn to_string(sign: Sign, digits: Vec<u64>) -> String{
        x.push(0u64);
        let xlen = x.len();
        let mut interval = 0usize;
-      for i in 0..xlen+1 {
-       
-         k.push(div_slice(&mut x[..],0x8AC7230489E80000u64));//(xlen-interval)
-         
+      loop {
+      
+      let idx = sig_pos(&x[..]);
+      
+      if idx == 0 {
+        break;
       }
+      
+      k.push(div_slice(&mut x[..idx],0x8AC7230489E80000u64));
+      
+      }
+      k.push(x[0]%0x8AC7230489E80000u64);
+      
+
       let mut count=0usize;
       for i in k.iter().rev(){
        if *i > 0u64{
@@ -47,6 +56,7 @@ pub(crate) fn to_string(sign: Sign, digits: Vec<u64>) -> String{
       }
 
       k.truncate(k.len()-count);
+
         let len = k.len()-1;
         let interim = k[..len].iter().rev().map(|x| string_format(*x)).collect::<Vec<String>>();
         let last = k[len].to_string() + &interim.join("");

@@ -2,6 +2,19 @@ use crate::arithmetic::inlineops::*;
 use crate::arithmetic::sign::Sign;
 use std::cmp::Ordering;
 
+
+
+/*
+   Returns index of significant digit
+*/
+
+pub(crate) fn sig_pos(x: &[u64]) -> usize{
+   if x.last() == Some(&0){
+    return x.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)
+   }
+   return x.len()
+}
+
 /*
     Slice operations  
 */

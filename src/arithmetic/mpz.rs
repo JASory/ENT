@@ -11,7 +11,7 @@ use crate::primes::MERSENNE_LIST;
 use crate::traits::NumberTheory;
 
 
-#[derive(Debug,Clone, PartialEq)]
+#[derive(Debug,Default,Clone, PartialEq)]
  pub struct Mpz{
       pub(crate)   sign: Sign,
       pub(crate)  limbs: Vec<u64>,
@@ -60,7 +60,7 @@ use crate::traits::NumberTheory;
  }
  
  pub fn rand(len: usize,gen: fn()->u64) -> Self {
-      let interim = (0..len).map(|_| rand()).collect::<Vec<u64>>();
+      let interim = (0..len).map(|_| rng_64()).collect::<Vec<u64>>();
       Mpz::new(Sign::Positive, interim)
  }
  
@@ -211,7 +211,7 @@ use crate::traits::NumberTheory;
  
  */
      
-   pub fn cmp(&self, other:&Self)->Ordering{
+   pub fn u_cmp(&self, other:&Self)->Ordering{
             cmp_slice(&self.limbs[..],&other.limbs[..])
    } 
  
@@ -312,8 +312,8 @@ use crate::traits::NumberTheory;
       let mut k = n.clone();
       let mut selfie = self.clone();
 
-     if self.cmp(&n)== Ordering::Greater{
-      selfie = selfie.euclidean(&n).1;
+     if self.u_cmp(&n)== Ordering::Greater{
+      selfie = selfie.ref_euclidean(&n).1;
      }
      
       sub_slice(&mut k.limbs,&selfie.limbs);
@@ -335,7 +335,15 @@ use crate::traits::NumberTheory;
       self.limbs.push(1u64)
      }
   }
+  /*
+  pub fn inv_successor(&mut self){
+      
+  }
   
+  pub fn inc_by(&mut self, x: i64){
+    
+  }
+  */
   /*
       Arithmetic 
   */
@@ -355,11 +363,11 @@ use crate::traits::NumberTheory;
      }
      
     else{
-       if self.cmp(&other)==Ordering::Less{
+       if self.u_cmp(&other)==Ordering::Less{
              carry = sub_slice(&mut other.limbs[..],&self.limbs[..]);
              *self = other;
         }
-     else if self.cmp(&other)==Ordering::Equal{
+     else if self.u_cmp(&other)==Ordering::Equal{
            self.limbs.truncate(0);
            self.limbs.push(0);
            self.sign = Sign::Positive;
@@ -410,7 +418,7 @@ use crate::traits::NumberTheory;
   
   
   
-  pub fn euclidean(&self, other: &Self)->(Self, Self){
+  pub fn ref_euclidean(&self, other: &Self)->(Self, Self){
 
     let mut dividend = self.clone();
     
@@ -430,11 +438,11 @@ use crate::traits::NumberTheory;
     }
      
      
-     if dividend.cmp(&other)== Ordering::Equal{
+     if dividend.u_cmp(&other)== Ordering::Equal{
         return (Mpz::one(), Mpz::zero())
      }
      
-     if dividend.cmp(&other)== Ordering::Less{
+     if dividend.u_cmp(&other)== Ordering::Less{
        return (Mpz::zero(), dividend)
      }
    
@@ -460,11 +468,11 @@ use crate::traits::NumberTheory;
   */
      
  pub fn u_quadratic_residue(&self, n: &Self) -> Self{
-        self.ref_product(&self).euclidean(n).1
+        self.ref_product(&self).ref_euclidean(n).1
  }   
  
  pub fn u_mul_mod(&self, other: &Self, n: &Self) -> Self{
-      self.ref_product(other).euclidean(n).1
+      self.ref_product(other).ref_euclidean(n).1
   }
    
  pub fn u_mod_pow(&self,  y: &Self, modulo: &Self )->Self{
@@ -474,7 +482,7 @@ use crate::traits::NumberTheory;
         }
         
         let mut z = Mpz::one();
-        let mut base = self.clone().euclidean(modulo).1;
+        let mut base = self.clone().ref_euclidean(modulo).1;
         let one = Mpz::one();
         
 
@@ -484,7 +492,7 @@ use crate::traits::NumberTheory;
            return z
         }
         
-        while pow.cmp(&one) == Ordering::Greater {
+        while pow.u_cmp(&one) == Ordering::Greater {
        
        if pow.len() ==0{
          break;
@@ -577,8 +585,8 @@ use crate::traits::NumberTheory;
       if self.is_fermat(){return false}
       
       for i in 0..steps{
-     let z = Mpz::rand(self.len(),rand).euclidean(&self).1;
-     
+     let z = Mpz::rand(self.len(),rng_64).ref_euclidean(&self).1;
+     println!("Bang!");
      if self.sprp(z)==false{ return false} //
    }
    
@@ -587,14 +595,21 @@ use crate::traits::NumberTheory;
   
     // weighted to maintain at most 2^-64 probability of failure, slower than most implementations for small numbers but faster for larger. Values greater than 2^512 receive only two checks, a strong-base 2 and a random-base check. This is due to the fact that the density of pseudoprimes rapidly declines
   pub fn probable_prime(&self) -> bool{
-      const CHECK_LUT : [u8;10] = [12,11,9,6,5,5,4,3,2,1];
+      const CHECK_LUT : [u8;10]  = [12,11,9,6,5,5,4,3,2,1];
+      const DIV_BOUND : [u16;10] = [380,500,800,1000,1200,1400,1600,1800,2000,2048];
       let mut check = 1;
-     if self.len() < 8{
-         check = CHECK_LUT[self.len()]
+      let mut supremum = 2048;
+      if self.len() < 2usize {
+         return self.to_u64().unwrap().is_prime()
+      }
+      
+     if self.len() < 12{
+         check = CHECK_LUT[self.len()-2];
+         supremum = DIV_BOUND[self.len()-2];
      }
 
    let two = Mpz::from_u64(2);
-
+    println!("{}",check);
    if self.is_even(){return false}
    if self.is_fermat(){return false}
    
@@ -604,8 +619,8 @@ use crate::traits::NumberTheory;
                    else{return self.llt()} }
       None    => (),
     }
-    
-   for i in PRIMELIST[1..].iter(){ // apparently optimal on my machine
+    println!("{}",check);
+   for i in PRIMELIST[1..supremum as usize].iter(){ 
      if self.congruence_u64(*i as u64,0){
        return false
      }
@@ -634,7 +649,7 @@ use crate::traits::NumberTheory;
   	  s.normalize();
   	  sub_slice(&mut s.limbs[..], &[2]);
   	  
-  	  s = s.euclidean(&self).1;
+  	  s = s.ref_euclidean(&self).1;
   	}
   	s.normalize();
   	if s == Mpz::zero(){return true}
@@ -699,12 +714,12 @@ use crate::traits::NumberTheory;
   }
   
    fn delta(&self, other: &Self) -> Self{
-     if self.cmp(other) == Ordering::Greater {
+     if self.u_cmp(other) == Ordering::Greater {
        let mut k = self.clone();
        sub_slice(&mut k.limbs[..],&other.limbs[..]);
        return k 
      }
-     if self.cmp(other) == Ordering::Less{
+     if self.u_cmp(other) == Ordering::Less{
        let mut k = other.clone();
         sub_slice(&mut k.limbs[..],&self.limbs[..]);
         return k
@@ -717,7 +732,7 @@ use crate::traits::NumberTheory;
   fn mod_sqr_1(&self, n: &Self) -> Self{
      let mut k = self.ref_product(&self);
      k.successor();
-     k.euclidean(n).1
+     k.ref_euclidean(n).1
   }
   
   fn gcd(&self, other: &Self)->Self{
@@ -729,7 +744,7 @@ use crate::traits::NumberTheory;
 
              t = b.clone();
 
-             b = a.euclidean(&b).1;
+             b = a.ref_euclidean(&b).1;
 
              b.normalize();
              a = t;
@@ -741,7 +756,7 @@ use crate::traits::NumberTheory;
      let mut x = Mpz::new(Sign::Positive,vec![2]); let mut y = Mpz::new(Sign::Positive,vec![2]); let mut d = Mpz::one();
   while d == Mpz::one() {
   x = x.mod_sqr_1(&self);
-  y = y.mod_sqr_1(&self).mod_sqr_1(&self).euclidean(&self).1 ;
+  y = y.mod_sqr_1(&self).mod_sqr_1(&self).ref_euclidean(&self).1 ;
   d = x.delta(&y).gcd(self);
    }
    d
@@ -750,22 +765,63 @@ use crate::traits::NumberTheory;
   
   
  pub fn sqrt(&self) -> Self{
-        let isqrt = |x: u64| { let mut est = x>>((64-x.leading_zeros())/2);
-         
+ 
+ 
+     let isqrt = |x: u64| { let mut est = x>>((64-x.leading_zeros())/2);
+         if est == 0 {
+           return 1
+         }
     for i in 0..5{
         est = (est + x/est)>>1;
     }
     est
     
-};
+    };
+ 
+    if self.len() == 1{
+       return Mpz::from_u64(isqrt(self.lead_digit()))
+    }
+       let two = Mpz::from_u64(2);
+    
+       let zeros = self.lead_digit().leading_zeros();
+      // println!("first {}",(self.lead_digit()>>zeros) + self.limbs[self.len()-2]>>(64-zeros));
+       let lead = isqrt((self.lead_digit()>>zeros) + self.limbs[self.len()-2]>>(64-zeros));
+       let len = self.bit_length()>>1;
+            
+           //let checks = 2usize * (self.len() as f64).log2().ceil() as usize + 10usize;
+       let mut est = Mpz::from_u64(lead).shl(len as usize); // 30 -1 -1-1-1
+     //  println!("{}",checks);
+       for i in 0..35{              // upperbound of 40
+         est = ( est.addition(self.ref_euclidean(&est).0) ).ref_euclidean(&two).0;
+       }
+       est
+    
+ 
+    /*
        let lead = self.lead_digit();
        let mut est = Mpz::new(Sign::Positive, vec![0u64;(self.len()/2)]);
        let two = Mpz::new(Sign::Positive, vec![2]);
-       est.limbs.push(isqrt(lead));
-       for i in 0..100{
-         est = ( est.addition(self.euclidean(&est).0) ).euclidean(&two).0;
+       est.limbs.push(/*isqrt(lead)*/1u64);
+       let mut counter = 0;
+       let checks = 2usize * (self.len() as f64).log2().ceil() as usize + 5usize;
+       println!("{}", checks);
+       for i in 0..40{              // upperbound of 40
+         est = ( est.addition(self.ref_euclidean(&est).0) ).ref_euclidean(&two).0;
        }
        est
+       */
+       /*
+       loop {
+         counter+=1;
+         println!("{}",counter);
+         let s = est.clone();
+         let t = s.addition(self.ref_euclidean(&s).0);
+         let est = t.ref_euclidean(&two).0;
+         
+         if est.u_cmp(&s) == Ordering::Greater || est.u_cmp(&s) == Ordering::Equal {
+            return est
+            }
+       }*/
  } 
  
  pub fn nth_root(&self, y: u64) -> Self{
@@ -785,7 +841,7 @@ let lead = self.lead_digit();
        let root_minus =  Mpz::from_u64(y-1);
        est.limbs.push(nrt(lead,y));
        for i in 0..100{
-         est = ( (est.ref_product(&root_minus)).addition(self.euclidean(&est.pow(y-1)).0) ).euclidean(&root).0;
+         est = ( (est.ref_product(&root_minus)).addition(self.ref_euclidean(&est.pow(y-1)).0) ).ref_euclidean(&root).0;
        }
        est
 

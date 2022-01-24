@@ -5,6 +5,10 @@
 
 pub trait NumberTheory{
    
+   ///Random number generation, generally high-quality
+   fn rng() -> Self;
+   /// Euclidean function, normally called euclidean division
+   fn euclidean(&self, other: &Self) -> (Self,Self) where Self: Sized;
    ///Returns optimally fast primality check for each interval. 
    /// Deterministic for n < 2^64. For n > 2^64 then the probability of failure is > 2^-64. Unlike most libraries Number-Theory weights the number of Strong Fermat checks
    /// to guarantee a constant error rate, resulting in being slightly slower, but more accurate, for small numbers but faster for larger numbers. Values greater than 2^512
