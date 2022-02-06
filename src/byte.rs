@@ -7,7 +7,7 @@ impl NumberTheory for u8{
 
  fn rng() -> Self {(rng_32()>>24) as u8}
  
- fn euclidean(&self, other: &Self) -> (Self,Self) {
+ fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
  
@@ -73,7 +73,7 @@ impl NumberTheory for u8{
    }
  
  
- fn gcd(&self, other: &Self) -> Self{
+ fn euclid_gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -162,6 +162,45 @@ impl NumberTheory for u8{
        false => None,
      }
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ */
 
 }
 
@@ -171,7 +210,7 @@ impl NumberTheory for i8{
   
   fn rng() -> Self {(rng_32()>>24) as i8}
   
-  fn euclidean(&self, other: &Self) -> (Self,Self) {
+  fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
   
@@ -191,8 +230,8 @@ impl NumberTheory for i8{
       (self.abs() as u8).k_free(&(k.abs() as u8))
   }
   
-  fn gcd(&self, other: &Self) -> Self{
-      (self.abs() as u8).gcd( &(other.abs() as u8)) as i8
+  fn euclid_gcd(&self, other: &Self) -> Self{
+      (self.abs() as u8).euclid_gcd( &(other.abs() as u8)) as i8
   }
   
   fn euler_totient(&self) -> Self{
@@ -232,5 +271,45 @@ impl NumberTheory for i8{
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
      (self.abs() as u8).checked_legendre(&(p.abs() as u8))
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+   // assert!(k > 0 && k % 2 == 1);
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+ 
+ fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ */
  
 }

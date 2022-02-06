@@ -9,7 +9,7 @@ impl NumberTheory for u64{
 
  fn rng() -> Self {rng_64() }
  
- fn euclidean(&self, other: &Self) -> (Self,Self) {
+ fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
   
@@ -18,7 +18,8 @@ impl NumberTheory for u64{
    if *self < u32::MAX as u64 { // tree down to u32 if it fits
      return (*self as u32).is_prime()
    }
-   for i in PRIMELIST[..30].iter(){
+
+   for i in PRIMELIST[0..30].iter(){
      if *self%*i as u64 == 0 {return false}
    }
    
@@ -61,7 +62,6 @@ impl NumberTheory for u64{
        
        
     while n != 1{
-         //println!("called rho");
           let k = rho_64(n);
            factors.push(k);
            let mut count = 0u64;
@@ -94,7 +94,7 @@ impl NumberTheory for u64{
    }
  
  
- fn gcd(&self, other: &Self) -> Self{
+ fn euclid_gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -183,6 +183,46 @@ impl NumberTheory for u64{
        false => None,
      }
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
 
 }
 
@@ -192,7 +232,7 @@ impl NumberTheory for i64{
   
   fn rng() -> Self {rng_64() as i64 }
    
-  fn euclidean(&self, other: &Self) -> (Self,Self) {
+  fn euclidean_div(&self, other: &Self) -> (Self,Self) {
     (*self/ *other, *self%*other)
   }
   
@@ -212,8 +252,8 @@ impl NumberTheory for i64{
       (self.abs() as u64).k_free(&(k.abs() as u64))
   }
   
-  fn gcd(&self, other: &Self) -> Self{
-      (self.abs() as u64).gcd(&(other.abs() as u64)) as i64
+  fn euclid_gcd(&self, other: &Self) -> Self{
+      (self.abs() as u64).euclid_gcd(&(other.abs() as u64)) as i64
   }
   
   fn euler_totient(&self) -> Self{
@@ -248,12 +288,58 @@ impl NumberTheory for i64{
   
   
    fn legendre(&self, p: &Self) -> i8 {
-       (self.abs() as u64).legendre(&(p.abs() as u64))
+      let k = self.mod_pow(&((*p-1)>>1), p);
+    if k == 1{return 1};
+    if k == *p-1 {return -1};
+    return 0
+       //(self.abs() as u64).legendre(&(p.abs() as u64))
+       
  }
  
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
      (self.abs() as u64).checked_legendre(&(p.abs() as u64))
+     
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
  
 }
 
@@ -279,7 +365,7 @@ impl NumberTheory for i64{
   while d == 1 {
   x = mod_sqr1_64(x,n);
   y = mod_sqr1_64(mod_sqr1_64(y,n),n)%n;
-  d = delta_u64(x,y).gcd(&n)
+  d = delta_u64(x,y).euclid_gcd(&n)
    }
    d
 }

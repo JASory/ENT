@@ -9,7 +9,7 @@
  
   fn rng() -> Self {fuse(rng_64(), rng_64()) }
   
-  fn euclidean(&self, other: &Self) -> (Self,Self) {
+  fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
    
@@ -17,7 +17,7 @@
      if *self < u64::MAX as u128{
        return (*self as u64).is_prime()
      }
-     for i in PRIMELIST[..54].iter(){
+     for i in PRIMELIST[..100].iter(){
        if *self%*i as u128 == 0{
          return false
        }
@@ -95,7 +95,7 @@
    }
  
  
- fn gcd(&self, other: &Self) -> Self{
+ fn euclid_gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -159,13 +159,53 @@
        false => None,
      }
  } 
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
 }  
 
  impl NumberTheory for i128{
  
  fn rng() -> Self {fuse(rng_64(), rng_64()) as i128}
  
- fn euclidean(&self, other: &Self) -> (Self,Self) {
+ fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
  
@@ -185,8 +225,8 @@
       (self.abs() as u128).k_free(&(k.abs() as u128))
   }
   
-  fn gcd(&self, other: &Self) -> Self{
-      (self.abs() as u128).gcd(&(other.abs() as u128)) as i128
+  fn euclid_gcd(&self, other: &Self) -> Self{
+      (self.abs() as u128).euclid_gcd(&(other.abs() as u128)) as i128
   }
   
   fn euler_totient(&self) -> Self{
@@ -228,6 +268,46 @@
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
      (self.abs() as u128).checked_legendre(&(p.abs() as u128))
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
  
  }
   

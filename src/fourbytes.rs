@@ -9,7 +9,7 @@ impl NumberTheory for u32{
 
  fn rng() -> Self {rng_32() }
 
- fn euclidean(&self, other: &Self) -> (Self,Self) {
+ fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
 
@@ -91,7 +91,7 @@ impl NumberTheory for u32{
    }
  
  
- fn gcd(&self, other: &Self) -> Self{
+ fn euclid_gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -180,6 +180,45 @@ impl NumberTheory for u32{
        false => None,
      }
  }
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
 
 }
 
@@ -189,7 +228,7 @@ impl NumberTheory for i32{
   
   fn rng() -> Self {rng_32() as i32}
   
-  fn euclidean(&self, other: &Self) -> (Self,Self) {
+  fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
   
@@ -209,8 +248,8 @@ impl NumberTheory for i32{
       (self.abs() as u32).k_free(&(k.abs() as u32))
   }
   
-  fn gcd(&self, other: &Self) -> Self{
-      (self.abs() as u32).gcd(&(other.abs() as u32)) as i32
+  fn euclid_gcd(&self, other: &Self) -> Self{
+      (self.abs() as u32).euclid_gcd(&(other.abs() as u32)) as i32
   }
   
   fn euler_totient(&self) -> Self{
@@ -244,12 +283,56 @@ impl NumberTheory for i32{
   }
   
   fn legendre(&self, p: &Self) -> i8 {
-       (self.abs() as u32).legendre(&(p.abs() as u32))
+       //(self.abs() as u32).legendre(&(p.abs() as u32))
+    let k = self.mod_pow(&((*p-1)>>1), p);
+    if k == 1{return 1};
+    if k == *p-1 {return -1};
+    return 0
  }
  
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
      (self.abs() as u32).checked_legendre(&(p.abs() as u32))
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = *self;
+    let mut p = *k;
+    let mut t = 1i8;
+    n %= p;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n>>=zeros;
+     
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n % 4 == 3 && p % 4 == 3 {
+            t = -t;
+        }
+        n %= p;
+    }
+    
+    if p == 1 {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k > &0 && *k % 2 == 1 {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
 }
 
   // 32-bit pollard rho
@@ -275,7 +358,7 @@ impl NumberTheory for i32{
   while d == 1 {
   x = mod_sqr1_32(x,n);
   y = mod_sqr1_32(mod_sqr1_32(y,n),n)%n;
-  d = delta_u32(x,y).gcd(&n)
+  d = delta_u32(x,y).euclid_gcd(&n)
    }
    d
 }

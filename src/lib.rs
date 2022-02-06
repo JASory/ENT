@@ -1,4 +1,4 @@
-//!A simple library for elementary number theory and arbitrary precision arithmetic. 
+//!A "simple" library for elementary number theory and arbitrary precision arithmetic. 
 
 
 pub mod traits;

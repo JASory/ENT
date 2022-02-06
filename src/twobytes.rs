@@ -8,7 +8,7 @@ impl NumberTheory for u16{
 
  fn rng() -> Self {(rng_32()>>16) as u16}
  
- fn euclidean(&self, other: &Self) -> (Self,Self) {
+ fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
 
@@ -75,7 +75,7 @@ impl NumberTheory for u16{
    }
  
  
- fn gcd(&self, other: &Self) -> Self{
+ fn euclid_gcd(&self, other: &Self) -> Self{
      let mut a = self.clone();
      let mut b = other.clone();
      if b == 0 
@@ -173,7 +173,7 @@ impl NumberTheory for i16{
   
   fn rng() -> Self {(rng_32()>>16) as i16}
   
-  fn euclidean(&self, other: &Self) -> (Self,Self) {
+  fn euclidean_div(&self, other: &Self) -> (Self,Self) {
    (*self/ *other, *self%*other)
   }
   
@@ -193,8 +193,8 @@ impl NumberTheory for i16{
       (self.abs() as u16).k_free(&(k.abs() as u16))
   }
   
-  fn gcd(&self, other: &Self) -> Self{
-      (self.abs() as u16).gcd( &(other.abs() as u16)) as i16
+  fn euclid_gcd(&self, other: &Self) -> Self{
+      (self.abs() as u16).euclid_gcd( &(other.abs() as u16)) as i16
   }
   
   fn euler_totient(&self) -> Self{

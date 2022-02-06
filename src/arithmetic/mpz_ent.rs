@@ -9,9 +9,9 @@ use crate::primes::PRIMELIST;
 impl NumberTheory for Mpz{
   
   
-  fn rng() -> Self {Mpz::new(Sign::Positive, vec![rng_64(), rng_64(), rng_64(), rng_64()])}
+  fn rng() -> Self {Mpz::unchecked_new(Sign::Positive, vec![rng_64(), rng_64(), rng_64(), rng_64()])}
   
-  fn euclidean(&self, other:&Self) -> (Self,Self) {
+  fn euclidean_div(&self, other:&Self) -> (Self,Self) {
      if self.sign==Sign::Negative && other.sign == Sign::Negative {
         let (quo, mut rem) = self.ref_euclidean(other);
         rem.neg();
@@ -91,7 +91,7 @@ impl NumberTheory for Mpz{
  
  }
  
- fn gcd(&self, other: &Self)->Self{
+ fn euclid_gcd(&self, other: &Self)->Self{
          let mut a = self.clone();
          let mut b = other.clone();
 
@@ -127,7 +127,7 @@ impl NumberTheory for Mpz{
         
          
           if rem == 0{
-        //  println!("rem hit {}", i);
+
            let mut count = 1u64;
              factors.push(Mpz::from_u64(*i as u64));
              n = quo;
@@ -150,7 +150,7 @@ impl NumberTheory for Mpz{
           
           }
           n.normalize();
-       // println!("{:?}", n);
+
           if n == Mpz::one() {
             return factors
           }
@@ -160,7 +160,7 @@ impl NumberTheory for Mpz{
              factors.push(Mpz::one());
              return factors
           }
-         // println!("next step{}", n.to_string());
+
        'outer : while n != Mpz::one(){
           
               let k = n.rho_mpz();
@@ -250,5 +250,47 @@ impl NumberTheory for Mpz{
        false => None,
      }
  }
+ 
+ /*
+ fn jacobi(&self, k: &Self) -> i8 {
+    let mut n = self.clone();
+    let mut p = k.clone();
+    let mut t = 1i8;
+    n = n.euclidean(&p).1;
+    
+    while n != 0 {
+     let zeros = n.trailing_zeros(); 
+     n.mut_shr(zeros);
+     //n>>=zeros;
+     
+     if (p.limbs[0] % 8 == 3 || p.limbs[0] % 8 == 5) && (zeros%2 == 1) { 
+            t = -t
+     }
+    
+        std::mem::swap(&mut n, &mut p);
+        if n.limbs[0] % 4 == 3 && p.limbs[0] % 4 == 3 {
+            t = -t;
+        }
+        
+        n = n.euclidean(&p).1;
+    }
+    
+    if p == Mpz::one() {
+        t
+    } 
+    
+    else {
+        0
+    }
+}
+
+fn checked_jacobi(&self, k: &Self) -> i8{
+    if k.sign == Positive && k != Mpz::zero() && k.is_even() == false {
+       Some(self.jacobi(k))
+    }
+     return None
+ }
+ 
+ */
   
   }

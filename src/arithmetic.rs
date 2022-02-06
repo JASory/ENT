@@ -1,8 +1,11 @@
-pub  mod inlineops;
-     mod sliceops;
-     mod muldiv;
-     mod conversion;
+pub(crate)  mod inlineops;
+            mod sliceops;
+            mod muldiv;
+            mod conversion;
      
  pub mod sign;
  pub mod mpz;
- pub mod mpz_ent;   
+  mod mpz_ent;   
+ 
+  mod mpz_arith;
+  mod mpz_prime;
