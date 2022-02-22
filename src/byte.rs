@@ -156,14 +156,13 @@ impl NumberTheory for u8{
  }
  
  fn checked_legendre(&self, p: &Self) -> Option<i8> {
-     if *p == 2 {return None}
-     match p.is_prime(){
-       true  => Some(self.legendre(p)),
-       false => None,
-     }
+     if p == &2 || p.is_prime() == false {
+          return None
+        } 
+       Some(self.legendre(&p))
  }
  
- /*
+ 
  fn jacobi(&self, k: &Self) -> i8 {
     let mut n = *self;
     let mut p = *k;
@@ -194,13 +193,13 @@ impl NumberTheory for u8{
     }
 }
 
-fn checked_jacobi(&self, k: &Self) -> i8{
+fn checked_jacobi(&self, k: &Self) -> Option<i8>{
     if k > &0 && *k % 2 == 1 {
-       Some(self.jacobi(k))
+     return Some(self.jacobi(k))
     }
      return None
  }
- */
+ 
 
 }
 
@@ -265,14 +264,20 @@ impl NumberTheory for i8{
   }
   
   fn legendre(&self, p: &Self) -> i8 {
-       (self.abs() as u8).legendre(&(p.abs() as u8))
+    let k = self.mod_pow(&((p.abs()-1)>>1), &p.abs());
+    if k == 1{return 1};
+    if k == p.abs()-1 {return -1};
+    return 0
  }
  
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
-     (self.abs() as u8).checked_legendre(&(p.abs() as u8))
+    if p.abs() == 2 || p.is_prime() == false {
+          return None
+        } 
+       Some(self.legendre(&p))
  }
  
- /*
+ 
  fn jacobi(&self, k: &Self) -> i8 {
    // assert!(k > 0 && k % 2 == 1);
     let mut n = *self;
@@ -304,12 +309,12 @@ impl NumberTheory for i8{
     }
 }
  
- fn checked_jacobi(&self, k: &Self) -> i8{
+ fn checked_jacobi(&self, k: &Self) -> Option<i8>{
     if k > &0 && *k % 2 == 1 {
-       Some(self.jacobi(k))
+     return Some(self.jacobi(k))
     }
      return None
  }
- */
+ 
  
 }

@@ -55,11 +55,11 @@ use crate::traits::NumberTheory;
          Mpz::from_slice(sign, &limbs[..])
      }
      
-  pub(crate) fn unchecked_u_new(limbs: Vec<u64>) -> Self{
+  pub fn unchecked_u_new(limbs: Vec<u64>) -> Self{
          Mpz{sign: Sign::Positive, limbs}
   }  
   
-  pub(crate) fn unchecked_new(sign: Sign, limbs: Vec<u64>) -> Self{
+  pub fn unchecked_new(sign: Sign, limbs: Vec<u64>) -> Self{
          Mpz{sign, limbs}
   }
   
@@ -131,6 +131,24 @@ use crate::traits::NumberTheory;
      to_string(self.sign.clone(),self.limbs.clone())
  
  }
+    // temporary placeholder function to flip negative zeros
+ pub (crate) fn fix_zero(&mut self){
+    if self.len() == 0 { self.limbs.push(0u64)}
+    if self.len() == 1 && self.limbs[0]== 0 && self.sign == Sign::Negative{
+    self.sign = Sign::Positive;
+    }
+ }
+ /**
+   Returns the polynomial representation of self in the form of the coefficient vector. Here we see that 50620 to radix-127 is 3x^2 + 17x + 74. 
+   Accepts all radix in the interval 0;2^64-1. 
+ 
+ ```
+ use number_theory::Mpz;
+
+  let value = Mpz::from_u64(50620);
+  assert_eq!(value.to_radix_vec(127),vec![74,17,3])
+ ```
+ */
  
  pub fn to_radix_vec(&self, radix: u64) -> Vec<u64> {
        let mut k = vec![];
@@ -147,6 +165,7 @@ use crate::traits::NumberTheory;
       
       }
       k.push(x[0]%radix);
+      remove_lead_zeros(&mut k);
       return k
  }   
   #[deprecated( note = "u_from_string was originally a quick implementation for usage in other libraries, from_string is stable now so use it instead ~ J.A Sory")]
@@ -156,6 +175,18 @@ use crate::traits::NumberTheory;
        None    => None,
      }
  }
+ 
+ /**
+   Conversion from radix-10^n string.  
+ 
+ ```
+ use number_theory::Mpz;
+  let num = "-3141592653589793238462643383279502884197169399375105820974944592307816406286".to_string();
+  let machine = Mpz::from_string(&num).unwrap();
+  
+  assert_eq!(machine.to_string(),num)
+ ```
+ */
   
  pub fn from_string(x: &str) -> Option<Self> {
      let ch = x.chars().nth(0).unwrap();
@@ -169,7 +200,6 @@ use crate::traits::NumberTheory;
      }
      
      if ch == '+'{
-       //x.chars().next();
        let mut chars = x.chars();
        chars.next();
        k = chars.as_str();
@@ -253,6 +283,10 @@ use crate::traits::NumberTheory;
   
   self.limbs[index/64usize]|=1<<(index%64)
  
+ }
+ 
+ pub fn set_sign(&mut self, sign: Sign) {
+      self.sign = sign
  } 
      
   pub   fn len(&self)->usize{
@@ -324,7 +358,11 @@ use crate::traits::NumberTheory;
  
  
   pub fn congruence_u64(&self, n: u64, c: u64) -> bool{
-        mod_slice(&self.limbs[..],n) == c
+         let mut  interim = mod_slice(&self.limbs[..],n);
+         if self.sign == Sign::Negative {
+            interim = n - interim;
+         }
+        interim == c
   }
   
   pub fn add_modinv(&self, n: &Self) -> Self{// additive modular inverse
@@ -724,7 +762,55 @@ let lead = self.lead_digit();
      }
      sirp
      } 
+     /**
+     Conditional Interval Product computes the product of integers satisfying an unary function. In this example the unary function is the primality function.
+     
+   ```
+   
+       use number_theory::Mpz; 
+       use crate::number_theory::NumberTheory;
+
+      let primorial_100 = Mpz::cip(1,100,u64::is_prime); 
+      
+      
+   ```
+ */
   
-  }
+       // conditional interval product
+  pub fn cip(infimum: u64, supremum: u64, cond: fn (&u64) -> bool) -> Self{
+      let mut cip = Mpz::one();
+        let mut acc = 1u64;  // accumulator for factors 
+       for i in infimum..supremum+1{
+          if cond(&i){
+          
+            if i >= 4294967296 {  
+         acc = i
+        }
+       if acc < 4294967296{
+          acc*=i
+       }
+       if acc >= 4294967296{
+        let mut carry = 0u64;
+           carry = scale_slice(&mut cip.limbs[..],acc);
+
+          if carry > 0 {
+       
+            cip.limbs.push(carry)
+      
+          }
+         acc= 1u64;
+       } // end if 
+      } // else
+     }
+     
+     let carry = scale_slice(&mut cip.limbs[..],acc);
+     if carry > 0{
+        cip.limbs.push(carry)
+     }
+     cip
+          }
+          
+       }
+  
   
   

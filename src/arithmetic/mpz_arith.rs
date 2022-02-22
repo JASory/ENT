@@ -263,6 +263,14 @@ impl Mpz {
     if dividend == Mpz::zero() { 
         return (Mpz::zero(), Mpz::zero());
     }
+    
+    if dividend.len() == 0usize{
+       return (Mpz::zero(),Mpz::zero())
+    }
+    
+    if other.len() == 0usize || other == &Mpz::zero(){
+       panic!("Division by zero is undefined in Z")
+    }
 
     if other.len() == 1 {
         if other.limbs == [1] {

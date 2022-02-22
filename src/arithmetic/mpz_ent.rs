@@ -11,26 +11,27 @@ impl NumberTheory for Mpz{
   
   fn rng() -> Self {Mpz::unchecked_new(Sign::Positive, vec![rng_64(), rng_64(), rng_64(), rng_64()])}
   
+  
+  
+  
   fn euclidean_div(&self, other:&Self) -> (Self,Self) {
+        let (mut quo, mut rem) = self.ref_euclidean(other);
      if self.sign==Sign::Negative && other.sign == Sign::Negative {
-        let (quo, mut rem) = self.ref_euclidean(other);
         rem.neg();
-        return (quo,rem)
      }
      else if self.sign==Sign::Positive && other.sign == Sign::Negative {
-       let (mut quo, mut rem) = self.ref_euclidean(other);
         quo.neg();
-        return (quo,rem)
      }
      else if self.sign==Sign::Negative && other.sign == Sign::Positive{
-       let (mut quo, mut rem) = self.ref_euclidean(other);
         quo.neg();
         rem.neg();
-        return (quo,rem)
      }
      
-     self.ref_euclidean(other)
+    quo.fix_zero();
+    rem.fix_zero();
+    (quo,rem)
   }
+  
   
   fn quadratic_residue(&self, n: &Self) -> Self{
   
@@ -235,6 +236,7 @@ impl NumberTheory for Mpz{
  
  fn legendre(&self, p: &Self) -> i8 {
      let mut p_minus = p.clone();
+     p_minus.set_sign(Sign::Positive);
      sub_slice(&mut p_minus.limbs[..], &[1]);
      let pow = p_minus.ref_euclidean(&Mpz::from_u64(2)).0;
      let k = self.mod_pow(&pow,&p);
@@ -244,35 +246,41 @@ impl NumberTheory for Mpz{
  }
  
  fn checked_legendre(&self, p: &Self) -> Option<i8> {
-      if p == &Mpz::from_u64(2) {return None}
-     match p.is_prime(){
-       true  => Some(self.legendre(p)),
+     let mut plus = p.clone();
+     plus.set_sign(Sign::Positive);
+      if plus == Mpz::from_u64(2) {return None}
+     match plus.is_prime(){
+       true  => Some(self.legendre(&plus)),
        false => None,
      }
  }
  
- /*
+ 
  fn jacobi(&self, k: &Self) -> i8 {
     let mut n = self.clone();
     let mut p = k.clone();
     let mut t = 1i8;
-    n = n.euclidean(&p).1;
-    
-    while n != 0 {
+    n = n.euclidean_div(&p).1;
+
+    while n != Mpz::zero(){
      let zeros = n.trailing_zeros(); 
-     n.mut_shr(zeros);
-     //n>>=zeros;
+     n.mut_shr(zeros as usize);
      
-     if (p.limbs[0] % 8 == 3 || p.limbs[0] % 8 == 5) && (zeros%2 == 1) { 
+     if (p.congruence_u64(8,3) || p.congruence_u64(8,5)) && (zeros%2 == 1) { 
+
             t = -t
      }
     
         std::mem::swap(&mut n, &mut p);
-        if n.limbs[0] % 4 == 3 && p.limbs[0] % 4 == 3 {
+        
+        if n.congruence_u64(4,3) && p.congruence_u64(4,3) {
+
             t = -t;
         }
-        
-        n = n.euclidean(&p).1;
+
+        n = n.euclidean_div(&p).1;
+
+       
     }
     
     if p == Mpz::one() {
@@ -284,13 +292,13 @@ impl NumberTheory for Mpz{
     }
 }
 
-fn checked_jacobi(&self, k: &Self) -> i8{
-    if k.sign == Positive && k != Mpz::zero() && k.is_even() == false {
-       Some(self.jacobi(k))
+fn checked_jacobi(&self, k: &Self) -> Option<i8>{
+    if k.sign == Sign::Positive && k != &Mpz::zero() && k.is_even() == false {
+      return Some(self.jacobi(k))
     }
      return None
  }
  
- */
+ 
   
   }

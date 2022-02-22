@@ -39,11 +39,19 @@ pub trait NumberTheory{
    /// Legendre symbol of a,p. Verifies that p is an odd prime, returns None if not. 
    fn checked_legendre(&self, p: &Self) -> Option<i8> ;
    
+   
+   /// Jacobi symbol of self,p. Assumes that p is an odd prime
+   fn jacobi(&self, p: &Self) -> i8 ;  
+   /// Jacobi symbol of self,p. Verifies that p is an odd prime, returns None if not. 
+   fn checked_jacobi(&self, p: &Self) -> Option<i8> ;
    /*
    
    /// Pi approximation
    fn pi(&self) -> f64;
    
+   let x = self.ln();
+    //(self/x )*(1.0 + 1.0/x  + 2.0/(x.ln()*x.ln()))
+       
    /// Smoothness bound of number
    fn smooth
    /// Checks if the smoothness bound is at least b
@@ -61,78 +69,13 @@ pub trait NumberTheory{
    fn jordan_totient
    
    
-   /// Jacobi symbol of a,p. Assumes that p is an odd prime
-   fn jacobi()   
-   /// Jacobi symbol of a,p. Verifies that p is an odd prime, returns None if not. 
-   fn checked_jacobi
    
     /// Integer partition
    fn partition()
    */
 }
 
-
 /*
-fn jacobi(mut n: i32, mut k: i32) -> i32 {
-    assert!(k > 0 && k % 2 == 1);
-    n %= k;
-    let mut t = 1;
-    
-    while n != 0 {
-     let zeros = n.trailing_zeros(); 
-     n>>=zeros;
-     
-     if (k % 8 == 3 || k % 8 == 5) && (zeros%2 == 1) { 
-            t = -t
-     }
-    
-        std::mem::swap(&mut n, &mut k);
-        if n % 4 == 3 && k % 4 == 3 {
-            t = -t;
-        }
-        n %= k;
-    }
-    
-    if k == 1 {
-        t
-    } 
-    
-    else {
-        0
-    }
-}
-
-fn jacobi(&self, k: &u8) -> i8 {
-   // assert!(k > 0 && k % 2 == 1);
-    let mut n = *self;
-    let mut p = *k;
-    let mut t = 1i8;
-    n %= p;
-    
-    while n != 0 {
-     let zeros = n.trailing_zeros(); 
-     n>>=zeros;
-     
-     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
-            t = -t
-     }
-    
-        std::mem::swap(&mut n, &mut p);
-        if n % 4 == 3 && p % 4 == 3 {
-            t = -t;
-        }
-        n %= p;
-    }
-    
-    if p == 1 {
-        t
-    } 
-    
-    else {
-        0
-    }
-}
-
 NTT research 
 
   https://stackoverflow.com/questions/18465326/fast-bignum-square-computation

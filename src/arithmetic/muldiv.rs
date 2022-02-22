@@ -185,6 +185,14 @@ pub(crate) fn euclidean_slice(a: &mut Vec<u64>, b: &[u64])->(Vec<u64>,Vec<u64>){
     remove_lead_zeros(&mut remainder);
 
      remove_lead_zeros(&mut quotient);
-
+     if remainder.len() == 0{
+     println!("Executed?");
+       remainder.push(0u64)
+     }
+     
+     if quotient.len() == 0{
+       
+       quotient.push(0u64)
+     }
     (quotient,remainder )
 }

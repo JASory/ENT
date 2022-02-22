@@ -177,14 +177,13 @@ impl NumberTheory for u64{
  }
  
  fn checked_legendre(&self, p: &Self) -> Option<i8> {
-     if *p == 2 {return None}
-     match p.is_prime(){
-       true  => Some(self.legendre(p)),
-       false => None,
-     }
+     if p == &2 || p.is_prime() == false {
+          return None
+        } 
+       Some(self.legendre(&p))
  }
  
- /*
+ 
  fn jacobi(&self, k: &Self) -> i8 {
     let mut n = *self;
     let mut p = *k;
@@ -215,14 +214,14 @@ impl NumberTheory for u64{
     }
 }
 
-fn checked_jacobi(&self, k: &Self) -> i8{
+fn checked_jacobi(&self, k: &Self) -> Option<i8>{
     if k > &0 && *k % 2 == 1 {
-       Some(self.jacobi(k))
+     return Some(self.jacobi(k))
     }
      return None
  }
  
- */
+ 
 
 }
 
@@ -288,20 +287,21 @@ impl NumberTheory for i64{
   
   
    fn legendre(&self, p: &Self) -> i8 {
-      let k = self.mod_pow(&((*p-1)>>1), p);
+    let k = self.mod_pow(&((p.abs()-1)>>1), &p.abs());
     if k == 1{return 1};
-    if k == *p-1 {return -1};
+    if k == p.abs()-1 {return -1};
     return 0
-       //(self.abs() as u64).legendre(&(p.abs() as u64))
-       
  }
  
   fn checked_legendre(&self, p: &Self) -> Option<i8> {
-     (self.abs() as u64).checked_legendre(&(p.abs() as u64))
+      if p.abs() == 2 || p.is_prime() == false {
+        return None
+      } 
+     Some(self.legendre(&p))
      
  }
  
- /*
+ 
  fn jacobi(&self, k: &Self) -> i8 {
     let mut n = *self;
     let mut p = *k;
@@ -311,8 +311,9 @@ impl NumberTheory for i64{
     while n != 0 {
      let zeros = n.trailing_zeros(); 
      n>>=zeros;
-     
-     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) { 
+
+     if (p % 8 == 3 || p % 8 == 5) && (zeros%2 == 1) {
+
             t = -t
      }
     
@@ -320,6 +321,7 @@ impl NumberTheory for i64{
         if n % 4 == 3 && p % 4 == 3 {
             t = -t;
         }
+
         n %= p;
     }
     
@@ -332,14 +334,14 @@ impl NumberTheory for i64{
     }
 }
 
-fn checked_jacobi(&self, k: &Self) -> i8{
+fn checked_jacobi(&self, k: &Self) -> Option<i8>{
     if k > &0 && *k % 2 == 1 {
-       Some(self.jacobi(k))
+     return Some(self.jacobi(k))
     }
      return None
  }
  
- */
+ 
  
 }
 
