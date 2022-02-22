@@ -15,6 +15,7 @@ Currently implements these functions
 - K-free
 - Modular exponentiation and quadratic residues
 - Legendre symbol
+- Jacobi symbol
 
  Additionally this library has an implementation of the previous NT functions for arbitrary-precision integers, plus some elementary arithmetic. Multiplication utilizes Karatsuba algorithm, otherwise all other arithmetic can be assumed to be naive. 
  
@@ -37,6 +38,6 @@ Usage is fairly simple
    // Sign, generally unnecessary for ENT
  //use number_theory::arithmetic::sign::Sign; 
  // unsigned from string, defaults to Sign::Positive
- let mersenne = Mpz::u_from_string("127"); 
+ let mersenne = Mpz::from_string("-127"); 
  assert_eq!(mersenne.is_prime(), true);
  ```
