@@ -1,6 +1,6 @@
 [package]
 name = "number-theory"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 authors = ["J.A Sory jasory@rust-cas.org"]
 description = "Fast primality, factorization and elementary number theory for primitive types"
