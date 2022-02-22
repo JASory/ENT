@@ -83,6 +83,16 @@
     let (quo, rem) = Mpz::from_i128(-170000000000000000000).euclidean_div(&Mpz::from_i128(50000000));
     assert_eq!( (quo.ref_product(&Mpz::from_i128(50000000))).ref_addition(&rem), Mpz::from_i128(-170000000000000000000));
     
+    let (quo,rem) = Mpz::from_i128(-5i128).euclidean_div(&Mpz::from_i128(1i128));
+    assert_eq!(quo.to_string(),"-5");
+    assert_eq!(rem.to_string(),"0");
+    
+    let (quo,rem) = Mpz::from_string("-2500000000000000000000000000000000000000000000000000000000000000000000000000000000").unwrap().euclidean_div(&Mpz::from_string("50000000000000000000000000000000000000000").unwrap());
+    assert_eq!(rem.to_string(),"0");
+    
+    let (quo,rem) = Mpz::from_string("50000000000000000000000000000000000000000").unwrap().euclidean_div(&Mpz::from_string("-2500000000000000000000000000000000000000000000000000000000000000000000000000000000").unwrap());
+    println!("{:?}",quo);
+    assert_eq!(quo,Mpz::unchecked_new(Sign::Positive,vec![0]));
     }
     
    

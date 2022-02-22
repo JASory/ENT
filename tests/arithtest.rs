@@ -15,14 +15,14 @@ use number_theory::Sign;
  assert_eq!(Mpz::u_from_string("222222222222222222222222222222222222222222").unwrap().ref_addition(&
  Mpz::u_from_string("222222222222222222222").unwrap()).to_string(), "222222222222222222222444444444444444444444");
  
- assert_eq!(Mpz::from_string(Sign::Negative,"222222222222222222222222222222222222222222").unwrap().ref_addition(&
+ assert_eq!(Mpz::from_string("-222222222222222222222222222222222222222222").unwrap().ref_addition(&
  Mpz::u_from_string("222222222222222222222").unwrap()).to_string(), "-222222222222222222222000000000000000000000");
  
- assert_eq!(Mpz::from_string(Sign::Negative,"222222222222222222222222222222222222222222").unwrap().ref_addition(&
- Mpz::from_string(Sign::Negative,"222222222222222222222").unwrap()).to_string(), "-222222222222222222222444444444444444444444");
+ assert_eq!(Mpz::from_string("-222222222222222222222222222222222222222222").unwrap().ref_addition(&
+ Mpz::from_string("-222222222222222222222").unwrap()).to_string(), "-222222222222222222222444444444444444444444");
  
- assert_eq!(Mpz::from_string(Sign::Positive,"222222222222222222222222222222222222222222").unwrap().ref_addition(&
- Mpz::from_string(Sign::Negative,"222222222222222222222").unwrap()).to_string(), "222222222222222222222000000000000000000000");
+ assert_eq!(Mpz::from_string("222222222222222222222222222222222222222222").unwrap().ref_addition(&
+ Mpz::from_string("-222222222222222222222").unwrap()).to_string(), "222222222222222222222000000000000000000000");
  
   // Product                                                                                                   
  assert_eq!(Mpz::zero().ref_product(&Mpz::u_new(vec![1,2])),Mpz::zero());
@@ -33,13 +33,13 @@ use number_theory::Sign;
  assert_eq!(Mpz::u_from_string("222222222222222222222").unwrap().ref_product(&Mpz::u_from_string("222222222222222222222").unwrap()).to_string(),
  "49382716049382716049283950617283950617284" ) ;
  
- assert_eq!(Mpz::from_string(Sign::Negative,"222222222222222222222").unwrap().ref_product(&Mpz::from_string(Sign::Negative,"222222222222222222222").unwrap()).to_string(),
+ assert_eq!(Mpz::from_string("-222222222222222222222").unwrap().ref_product(&Mpz::from_string("-222222222222222222222").unwrap()).to_string(),
  "49382716049382716049283950617283950617284") ;
  
- assert_eq!(Mpz::from_string(Sign::Positive,"222222222222222222222").unwrap().ref_product(&Mpz::from_string(Sign::Negative,"222222222222222222222").unwrap()).to_string(),
+ assert_eq!(Mpz::from_string("222222222222222222222").unwrap().ref_product(&Mpz::from_string("-222222222222222222222").unwrap()).to_string(),
  "-49382716049382716049283950617283950617284") ;
  
- assert_eq!(Mpz::from_string(Sign::Negative,"222222222222222222222").unwrap().ref_product(&Mpz::from_string(Sign::Positive,"222222222222222222222").unwrap()).to_string(),
+ assert_eq!(Mpz::from_string("-222222222222222222222").unwrap().ref_product(&Mpz::from_string("222222222222222222222").unwrap()).to_string(),
  "-49382716049382716049283950617283950617284") ;
  // exponentiation
  assert_eq!(Mpz::from_i64(33).pow(42).to_string(), "5992188611668647482797702362673386216879593110712943882639341889");
