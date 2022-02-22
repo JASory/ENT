@@ -25,6 +25,7 @@ Currently implements these functions
  - Conversion to and from radix-10 string
  - Successor function (+1)
  - SIRP-factorials
+ - Conditional Interval Product (CIP factorial)
  - Sqrt/nth root
  - Exponentiation
  - Logarithms
