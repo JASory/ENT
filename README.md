@@ -33,12 +33,11 @@ Currently implements these functions
 Usage is fairly simple
  ```rust
  // include NT functions
- use number_theory::traits::NumberTheory;  
+ use number_theory::NumberTheory;  
  // include arbitrary-precision arithmetic
- use number_theory::arithmetic::mpz::Mpz;
+ use number_theory::Mpz;
    // Sign, generally unnecessary for ENT
- //use number_theory::arithmetic::sign::Sign; 
- // unsigned from string, defaults to Sign::Positive
+ //use number_theory:Sign; 
  let mersenne = Mpz::from_string("-127"); 
  assert_eq!(mersenne.is_prime(), true);
  ```
