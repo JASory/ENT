@@ -138,44 +138,7 @@ impl Mpz {
     
  }
  
- /*
- pub fn mut_addition(&mut self, mut other: &Self){
-     let mut carry = 0u8;
- 
-     if self.sign == other.sign {
-        if &self.limbs.len() < &other.limbs.len(){
-            println!("{:?}",self.limbs);
-            println!("{:?}",other.limbs);
-            //self.limbs.extend_from_slice(&other.limbs[self.len()..]);
-            println!("{:?}",self.limbs);
-            std::mem::swap(&mut self, &mut other);
-        }
-     carry = add_slice(&mut self.limbs[..],&other.limbs[..]);
-      println!("{:?}",self.limbs);
-      if carry == 1u8{
-        self.limbs.push(1u64)
-      }
-     }
-     
-    else{
-       if self.u_cmp(&other)==Ordering::Less{
-             carry = sub_slice(&mut other.limbs[..],&self.limbs[..]);
-             *self = other;
-        }
-     else if self.u_cmp(&other)==Ordering::Equal{
-           self.limbs.truncate(0);
-           self.limbs.push(0);
-           self.sign = Sign::Positive;
-        }
-       else { 
-           sub_slice(&mut self.limbs[..],&other.limbs[..]);
-      
-        }
-    }
-    
- }
- 
- */
+
  
  pub fn ref_addition(&self, other: &Self) -> Self{
      let mut k =self.clone();
