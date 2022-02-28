@@ -26,7 +26,7 @@ pub trait NumberTheory{
    fn mod_pow(&self, pow: &Self, n: &Self) -> Self;
    /// Computes the remainder of self*other mod n
    fn mul_mod(&self, other: &Self, n: &Self) -> Self;
-    /// Identical to mul_modexcept in the case of u128 (not currently implemented) which uses a more optimized squaring
+    /// Identical to mul_mod except in the case of u128 (not currently implemented) which uses a more optimized squaring
    fn quadratic_residue(&self, n: &Self) -> Self;
    /// Determines of a number is k-free, i.e square-free, cube-free etc. . .
    fn k_free(&self, k: &Self) -> bool;
