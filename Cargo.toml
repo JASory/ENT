@@ -3,13 +3,13 @@ name = "number-theory"
 version = "0.0.6"
 edition = "2021"
 authors = ["J.A Sory jasory@rust-cas.org"]
-description = "Fast primality, factorization and elementary number theory for primitive types"
+description = "Fast primality, factorization and elementary number theory for integer types"
 keywords = ["primes", "factor", "number-theory", "bignum"]
 homepage   = "https://rust-cas.org"
 repository = "https://github.com/JASory/ENT"
 license    = "MIT"
 categories = ["algorithms", "mathematics"]
-readme      = "Readme.md"
+readme      = "README.md"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
