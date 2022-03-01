@@ -407,19 +407,7 @@ use crate::traits::NumberTheory;
       self.limbs.push(1u64)
      }
   }
-  /*
-  pub fn inv_successor(&mut self){
-      
-  }
-  
-  pub fn inc_by(&mut self, x: i64){
-     if self.len()==0{self.limbs.push(x)}
-     //let carry adc()
-     for i in self.limbs.iter_mut(){
-       carry = adc(carry,*i,)_
-     }
-  }
-  */
+ 
   
   
   /*
@@ -563,15 +551,19 @@ use crate::traits::NumberTheory;
     }
   
   pub(crate) fn rho_mpz(&self) -> Self{
-     let mut x = Mpz::unchecked_new(Sign::Positive,vec![2]); let mut y = Mpz::unchecked_new(Sign::Positive,vec![2]); let mut d = Mpz::one();
+   
+     let mut x = Mpz::from_u64(2);
+     let mut y = Mpz::from_u64(2);
+     let mut d = Mpz::one();
   while d == Mpz::one() {
   x = x.mod_sqr_1(&self);
   y = y.mod_sqr_1(&self).mod_sqr_1(&self).ref_euclidean(&self).1 ;
   d = x.delta(&y).gcd(self);
    }
-   d
-  }
   
+    return d
+  
+  }
   
   
  pub fn sqrt(&self) -> Self{
@@ -607,31 +599,7 @@ use crate::traits::NumberTheory;
        est
     
  
-    /*
-       let lead = self.lead_digit();
-       let mut est = Mpz::new(Sign::Positive, vec![0u64;(self.len()/2)]);
-       let two = Mpz::new(Sign::Positive, vec![2]);
-       est.limbs.push(/*isqrt(lead)*/1u64);
-       let mut counter = 0;
-       let checks = 2usize * (self.len() as f64).log2().ceil() as usize + 5usize;
-       println!("{}", checks);
-       for i in 0..40{              // upperbound of 40
-         est = ( est.addition(self.ref_euclidean(&est).0) ).ref_euclidean(&two).0;
-       }
-       est
-       *//*
-       let mut counter = 0u64;
-       loop {
-         counter+=1;
-         println!("{}",counter);
-         let s = est.clone();
-         let t = s.addition(self.ref_euclidean(&s).0);
-         let est = t.ref_euclidean(&two).0;
-         
-         if est.u_cmp(&s) == Ordering::Greater || est.u_cmp(&s) == Ordering::Equal {
-            return est
-            }
-       } */
+   
  } 
  
  pub fn nth_root(&self, y: u64) -> Self{
@@ -692,24 +660,35 @@ let lead = self.lead_digit();
       }
       return count
  }
- /*
- pub fn pi(&self) -> f64{   // fast pi  parallelize probable prime
-    let x = self.ln();
-    //(self/x )*(1.0 + 1.0/x  + 2.0/(x.ln()*x.ln()))
+ 
+ pub fn eea(&self, other: &Self) -> (Self,Self,Self){
+ 
+       let mut gcd = self.clone();
+       let mut new_r = other.clone();
+       let mut bezout_1 = Mpz::one();
+       let mut new_s = Mpz::zero();
+       let mut bezout_2 = Mpz::zero();
+       let mut new_t    = Mpz::one();
+       
+       while new_r != Mpz::zero(){
+         let (quo,rem) = gcd.euclidean_div(&new_r);
+         let mut temp = new_r.clone();
+         new_r = gcd.ref_subtraction(&quo.ref_product(&temp));    
+         gcd = temp.clone();
+         
+         temp = new_s.clone();
+         new_s = bezout_1.ref_subtraction(&quo.ref_product(&temp));
+         bezout_1 = temp.clone();
+         
+         temp = new_t.clone();
+         new_t = bezout_2.ref_subtraction(&quo.ref_product(&temp));
+         bezout_2 = temp.clone();
+       
+       }
+       (gcd,bezout_1,bezout_2) 
+ 
  }
- */
- /*
- def mod(n,p):
-    """ Returns the value of (s**2 - 2) % (2**p -1)"""
-    Mp = (1<<p) - 1
-    while n.bit_length() > p: # For Python < 2.7 use len(bin(n)) - 2 > p
-        n = (n & Mp) + (n >> p)
-    if n == Mp:
-        return 0
-    else:
-        return n
-
- */
+ 
  
  
  /**

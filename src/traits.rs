@@ -26,13 +26,20 @@ pub trait NumberTheory{
    fn mod_pow(&self, pow: &Self, n: &Self) -> Self;
    /// Computes the remainder of self*other mod n
    fn mul_mod(&self, other: &Self, n: &Self) -> Self;
-    /// Identical to mul_mod except in the case of u128 (not currently implemented) which uses a more optimized squaring
+    /// Identical to mul_modexcept in the case of u128 (not currently implemented) which uses a more optimized squaring
    fn quadratic_residue(&self, n: &Self) -> Self;
    /// Determines of a number is k-free, i.e square-free, cube-free etc. . .
    fn k_free(&self, k: &Self) -> bool;
    //fn partition(&self) -> u128;
    /// Returns the integer radical of self
    fn radical(&self)->Self;
+   
+   /// Smoothness bound of number
+   fn smooth(&self) -> Self;
+   /// Checks if the smoothness bound is at least b
+   fn is_smooth(&self, b: &Self) -> bool;
+   
+   
    
    /// Legendre symbol of a,p. Assumes that p is an odd prime
    fn legendre(&self, p: &Self) -> i8 ;   
@@ -52,10 +59,7 @@ pub trait NumberTheory{
    let x = self.ln();
     //(self/x )*(1.0 + 1.0/x  + 2.0/(x.ln()*x.ln()))
        
-   /// Smoothness bound of number
-   fn smooth
-   /// Checks if the smoothness bound is at least b
-   fn is_smooth
+   
    
    /// Louiville function
    fn louiville

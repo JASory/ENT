@@ -6,6 +6,8 @@ use crate::arithmetic::sliceops::*;
 use crate::arithmetic::inlineops::*;
 use crate::primes::PRIMELIST;
 
+use std::cmp::Ordering;
+
 impl NumberTheory for Mpz{
   
   
@@ -300,5 +302,18 @@ fn checked_jacobi(&self, k: &Self) -> Option<i8>{
  }
  
  
-  
+  fn smooth(&self) -> Self{
+      let k = self.factor();
+      k[k.len()-2].clone()
+  }
+
+ fn is_smooth(&self,b: &Self) -> bool{
+     let mut k = b.clone();
+     k.set_sign(Sign::Positive);
+     match self.smooth().u_cmp(&k){
+      Ordering::Less => true,
+      _ => false,
+     }
+     
+     }
   }

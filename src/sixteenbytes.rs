@@ -198,6 +198,15 @@ fn checked_jacobi(&self, k: &Self) -> Option<i8>{
  }
  
  
+ fn smooth(&self) -> Self{
+     let k = self.factor();
+     k[k.len()-2]
+ }
+ 
+ fn is_smooth(&self, b: &Self) -> bool{
+     &self.smooth() <= b
+ }
+ 
 }  
 
  impl NumberTheory for i128{
@@ -313,6 +322,14 @@ fn checked_jacobi(&self, k: &Self) -> Option<i8>{
  }
  
  
+ fn smooth(&self) -> Self{
+     let k = self.factor();
+     k[k.len()-2]
+ }
+ 
+ fn is_smooth(&self, b: &Self) -> bool{
+     self.smooth() <= b.abs()
+ }
  
  }
   

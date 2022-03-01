@@ -16,7 +16,7 @@
 
  impl Mpz {
  
- 
+   /// Strong Fermat test to a selected base
   pub fn sprp(&self, base: Self)->bool{
       let mut p_minus = self.clone();
       let one = Mpz::one();
@@ -42,7 +42,7 @@
       }
       return false
   }
-      
+      /// Performs n random base checks
   pub fn sprp_check(&self, steps: usize) -> bool{
       if self.len() < 2 {return self.to_u64().unwrap().is_prime()}  // if fits into u64, reduce to 64-bit check 
     
@@ -95,9 +95,8 @@
         }
     }
     
-  // println!("{}", supremum);
    
-   for i in PRIMELIST[17..2048u64 as usize].iter(){ // 295 14.074467005s   295 13.65539096s  
+   for i in PRIMELIST[17..supremum as usize].iter(){ // 295 14.074467005s   295 13.65539096s  
 
 
      if self.congruence_u64(*i as u64,0){
@@ -105,7 +104,6 @@
      }
    }
    
-   //println!("{}",check);
    if self.sprp(two)==false{return false}
  
   let z = self.sprp_check(check as usize +2);
@@ -130,7 +128,7 @@
   	return false
   }
  
- 
+ /// Faster than naive evaluation of sophie prime, returns safe prime if true, otherwise None
   pub fn is_sophie(&self) -> Option<Self> {
   	
   	if self.is_prime(){
