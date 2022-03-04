@@ -57,5 +57,3 @@ Usage is fairly simple
   // 872! + 1 is in-fact a factorial prime
   assert_eq!(factorial.is_prime(),true)
  ```
-
-[![GitHub stats](https://github-readme-stats.vercel.app/api?username=JASory)](https://github.com/JASory/github-readme-stats)
