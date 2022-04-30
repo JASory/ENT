@@ -1,5 +1,7 @@
 use crate::traits::NumberTheory;
 use crate::primes::PRIMELIST;
+use crate::primes::PRIME_INV_64;
+use crate::primes::PRIME_INV_128;
 
 use crate::fjprime64::fjprime_64;
 use crate::arithmetic::inlineops::*;
@@ -14,15 +16,28 @@ impl NumberTheory for u64{
   }
   
  fn is_prime(&self)->bool{
-   
    if *self < u32::MAX as u64 { // tree down to u32 if it fits
      return (*self as u32).is_prime()
    }
-
-   for i in PRIMELIST[0..30].iter(){
-     if *self%*i as u64 == 0 {return false}
+   if *self&1 == 0{return false}
+  
+  if self < &0x5A2553748E42E8{
+  for i in PRIME_INV_64[..].iter(){
+  
+    if (*self * *i ) < *self{
+      return false
+    }
+  }
+  }
+  
+  if self > &0x5A2553748E42E8{
+  for i in PRIME_INV_128[..].iter(){
+    if (*self as u128 * *i as u128) < *self as u128 {
+      return false
+    }
+  }
    }
-   
+  
      fjprime_64(*self)  
    
  }
@@ -386,6 +401,12 @@ fn checked_jacobi(&self, k: &Self) -> Option<i8>{
    d
 }
 
+fn mod_sqr(x: &mut u64, y: &mut u64, p: u64){
+     *x=((*x as u128 * *x as u128) %p as u128) as u64;
+     *y=((*y as u128 * *y as u128) %p as u128) as u64;
+    //((x*x % p),(y*y%p) )
+}
+
 pub(crate) fn sprp_64(p: u64, base: u64)->bool{// checks if base^p = 1 mod p  or base^(d*2^n)= -1 for some n  
      let zeroes = (p-1).trailing_zeros() as u64; // Breaks number down to p= d*2^n -1
      let d = (p-1)/ (1<<zeroes);
@@ -401,3 +422,4 @@ pub(crate) fn sprp_64(p: u64, base: u64)->bool{// checks if base^p = 1 mod p  or
     }
     return false        // otherwise it fails
  }
+ 

@@ -1,5 +1,6 @@
 use crate::traits::NumberTheory;
 use crate::primes::PRIMELIST;
+use crate::primes::PRIME_INV_64;
 
 use crate::fjprime32::fjprime_32;
 use crate::arithmetic::inlineops::*;
@@ -19,9 +20,16 @@ impl NumberTheory for u32{
      return (*self as u16).is_prime()
    }
    
-   for i in PRIMELIST[..30].iter(){
-     if *self%*i as u32 == 0{return false}
+   if *self&1 == 0 {
+     return false
    }
+   
+   for i in PRIME_INV_64[..].iter(){
+    if (*self as u64 * *i as u64) < *self as u64 {
+      return false
+    }
+  }
+ 
      fjprime_32(*self)  
    
  }

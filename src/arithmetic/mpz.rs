@@ -72,7 +72,7 @@ use crate::traits::NumberTheory;
              Mpz{sign, limbs}
   }   
      
-  pub fn from_u128(x: u128) -> Self{
+  pub  fn from_u128(x: u128) -> Self{
        let (x_lo,x_hi) = split(x);
        if x_hi == 0 {
         return Mpz::unchecked_new(Sign::Positive, vec![x_lo])
@@ -211,7 +211,7 @@ use crate::traits::NumberTheory;
      }
  }
  
-  pub fn zero() -> Self{
+  pub  fn zero() -> Self{
          Mpz::unchecked_new(Sign::Positive, vec![0])
   }
   
@@ -219,7 +219,7 @@ use crate::traits::NumberTheory;
          Mpz::unchecked_new(Sign::Positive, vec![1])
   }
      
-  pub   fn neg(&mut self){// negation
+  pub  fn neg(&mut self){// negation
         self.sign = self.sign.neg();
      }
      
@@ -229,6 +229,10 @@ use crate::traits::NumberTheory;
        }
          return false
   }   
+  
+  pub fn is_positive(&self) -> bool{
+     self.sign == Sign::Positive
+  }
      
   pub  fn is_even(&self)->bool{// checks if even 
            self.limbs[0]&1==0
@@ -289,7 +293,7 @@ use crate::traits::NumberTheory;
       self.sign = sign
  } 
      
-  pub   fn len(&self)->usize{
+  pub  fn len(&self)->usize{
            self.limbs.len()
         }
         
@@ -565,7 +569,7 @@ use crate::traits::NumberTheory;
   
   }
   
-  
+  /*
  pub fn sqrt(&self) -> Self{
  
  
@@ -601,7 +605,47 @@ use crate::traits::NumberTheory;
  
    
  } 
+ */
+
  
+ pub fn sqrt(&self) -> Self{
+ 
+    let mut est = self.shr(((self.bit_length()/2)-1) as usize);
+   
+   let mut count = 0u64;
+    loop {
+    count +=1;
+    let s = est.clone();
+    let t = s.ref_addition(&self.euclidean_div(&s).0);
+    est = t.shr(1);
+    remove_lead_zeros(&mut est.limbs);
+    if est.u_cmp(&s) == Ordering::Greater || est.u_cmp(&s) == Ordering::Equal{
+      return s
+    }
+    }
+    
+    
+    
+ }
+ 
+ pub fn nth_root(&self, y: u64) -> Self{
+      let shift = ((self.bit_length()/y)-1)*(y-1);
+      let mut est = self.shr(shift as usize);
+      let scalar = Mpz::from_u64(y-1);
+      let ymp = Mpz::from_u64(y);
+      let mut count = 0u64;
+      loop{
+      count+=1;
+      let s = est.clone();
+      let t = s.ref_product(&scalar).ref_addition(&self.euclidean_div(&s.pow(y-1)).0);
+      est = t.euclidean_div(&ymp).0;
+       if est.u_cmp(&s) == Ordering::Greater || est.u_cmp(&s) == Ordering::Equal{
+
+      return s
+    }
+      }
+ }
+ /*
  pub fn nth_root(&self, y: u64) -> Self{
     let nrt = |x: u64, y: u64| { 
     let mut est = x>> ( (y as u32-1)*(64-x.leading_zeros())/y as u32);
@@ -624,7 +668,7 @@ let lead = self.lead_digit();
        est
 
  }
- 
+ */
  // Sloppy approximation to natural logarithm
  pub fn ln(&self) -> f64{
      let mut iter_sqrt = 1u64;
@@ -789,7 +833,29 @@ let lead = self.lead_digit();
      cip
           }
           
+          
+  pub fn pi(&self) -> Self{
+  
+  // let lo = n / (ln - 1. - invln);
+     let ln = self.ln();
+     let ln_inv = ln.recip();
+     let lo_div = Mpz::from_u128( ((ln - 1. - ln_inv).recip()*1E+20) as u128);
+     let lo_prod = self.ref_product(&lo_div) ; 
+     let div = ln_inv * (1. + ln_inv * (1. + ln_inv * (2. + ln_inv * 7.59)));
+     let scalar = Mpz::from_u128((div * 1E+20) as u128);
+     let ten = Mpz::from_u64(10).pow(20);
+     let prod = self.ref_product(&scalar);
+     let total_prod = prod.ref_product(&lo_prod);
+      prod.ref_euclidean(&ten).0
+  }        
+          
+          
+          
        }
+  
+  
+  
+  
   
   
   

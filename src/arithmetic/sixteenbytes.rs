@@ -17,7 +17,7 @@
      if *self < u64::MAX as u128{
        return (*self as u64).is_prime()
      }
-     for i in PRIMELIST[..100].iter(){
+     for i in PRIMELIST[..54].iter(){
        if *self%*i as u128 == 0{
          return false
        }
@@ -334,4 +334,3 @@ fn checked_jacobi(&self, k: &Self) -> Option<i8>{
  }
   
   
-
