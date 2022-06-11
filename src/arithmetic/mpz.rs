@@ -438,9 +438,13 @@ use crate::traits::NumberTheory;
         
 
         let mut pow = y.clone();
+  
+        if pow == Mpz::zero(){
+           return z;
+        }
         
-        if pow ==  Mpz::one(){
-           return z
+        if pow == Mpz::one() {
+            return self.clone();
         }
         
         while pow.u_cmp(&one) == Ordering::Greater {
