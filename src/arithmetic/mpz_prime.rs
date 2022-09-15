@@ -1,148 +1,267 @@
 /*
 
-  Primality 
+  Primality
 
 */
-  use crate::Mpz;
-  use crate::traits::NumberTheory;
-  use crate::primes::MERSENNE_LIST;
-  use crate::primes::PRIMELIST;
-  
-  use crate::arithmetic::sliceops::sub_slice;
-  use crate::arithmetic::inlineops::rng_64;
-  use crate::arithmetic::sliceops::mod_slice;
+
+use crate::data::primes::PRIMELIST;
+
+use crate::traits::NumberTheory;
+use crate::Mpz;
+
+use crate::arithmetic::inlineops::rng_64;
+use crate::arithmetic::sliceops::mod_slice;
+use crate::arithmetic::sliceops::sub_slice;
 
 
+impl Mpz {
+    /// Strong Fermat test to a selected base
+    pub(crate) fn sprp(&self, base: Self) -> bool {
+        let mut p_minus = self.clone();
+        let one = Mpz::one();
 
- impl Mpz {
- 
-   /// Strong Fermat test to a selected base
-  pub fn sprp(&self, base: Self)->bool{
-      let mut p_minus = self.clone();
-      let one = Mpz::one();
+        sub_slice(&mut p_minus.limbs[..], &one.limbs[..]); //subtract one this will always succeed
 
-      sub_slice(&mut p_minus.limbs[..],&one.limbs[..]); //subtract one this will always succeed
+        let zeroes = p_minus.trailing_zeros() as usize;
 
-      let zeroes = p_minus.trailing_zeros() as usize;
+        let d = p_minus.shr(zeroes);
+        let mut x = base.u_mod_pow(&d, self);
 
-      let d = p_minus.shr(zeroes);  
-      let mut x = base.u_mod_pow(&d, self);
-      
-      if x == Mpz::one() || x == p_minus {
-         return true
-      }
-      
-      for i in 0..zeroes -1{
-
-        x = x.u_quadratic_residue(&self);
-
-        if x == p_minus{
-          return true
+        if x == Mpz::one() || x == p_minus {
+            return true;
         }
-      }
-      return false
-  }
-      /// Performs n random base checks
-  pub fn sprp_check(&self, steps: usize) -> bool{
-      if self.len() < 2 {return self.to_u64().unwrap().is_prime()}  // if fits into u64, reduce to 64-bit check 
-    
-      if self.is_fermat(){return false}
-      
-      for i in 0..steps{
-     let z = Mpz::rand(self.len(),rng_64).ref_euclidean(&self).1;
 
-     if self.sprp(z)==false{ return false} //
-   }
-   
-   return true
-  } 
-  
-    // weighted to maintain at most 2^-64 probability of failure, slower than most implementations for small numbers but faster for larger. Values greater than 2^512 receive only two checks, a strong-base 2 and a random-base check. This is due to the fact that the density of pseudoprimes rapidly declines
+        for _ in 0..zeroes - 1 {
+            x = x.u_quadratic_residue(self);
 
-  pub fn probable_prime(&self) -> bool{
-      const CHECK_LUT : [u8;10]  = [12,11,9,6,5,5,4,3,2,1];
-      const DIV_BOUND : [u16;10] = [380,500,800,1000,1200,1400,1600,1800,2000,2048]; // 8 300, 16 500  32 1000  64 2048
-      let mut check = 1;
-      let mut supremum = 2048;
-      if self.len() < 2usize {
-         return self.to_u64().unwrap().is_prime()
-      }
-      
-     if self.len() < 12{
-         check = CHECK_LUT[self.len()-2];
-         supremum = DIV_BOUND[self.len()-2];
+            if x == p_minus {
+                return true;
+            }
+        }
+        false
+    }
+
+    #[cfg(not(feature = "parallel"))]
+    /** Performs n random base checks, can be combined with is_prime to strengthen it. As is_prime is equivalent to one random sprp check in the worst case, the function below is 2^-64 in the worst case
+
+     use number_theory::NumberTheory;
+     use number_theory::Mpz;
+
+     fn strong_check(x: &Mpz) -> bool{
+       if !x.is_prime(){
+         return false
+       }
+       x.sprp_check(31)
      }
 
-   let two = Mpz::from_u64(2);
+    */
+    pub fn sprp_check(&self, n: usize) -> bool {
+        if self.len() < 2 {
+            return self.to_u64().unwrap().is_prime();
+        } // if fits into u64, reduce to 64-bit check
 
-   if self.is_even(){return false}
-   if self.is_fermat(){return false}
-   
+        if self.is_fermat() {
+            return false;
+        }
 
-   
-    match self.is_mersenne() {
-      Some(x) => {if MERSENNE_LIST.contains(&(x as u32)){return true}
-                   else if x < 57885161 {return false}
-                   else{return self.llt(x)} }
-      None    => (),
+        for _ in 0..n {
+            let z = Mpz::rand(self.len(), rng_64).ref_euclidean(self).1;
+
+            if !self.sprp(z) {
+                return false;
+            } //
+        }
+
+        true
     }
-   
-    let rem = mod_slice(&self.limbs[..],16294579238595022365);
+
+    #[cfg(feature = "parallel")] // Fix this,likely does not check the correct amount of tests
+    /// Checks n bases 
+    pub fn sprp_check(&self, k: usize) -> bool {
+        if self.len() < 2 {
+            return self.to_u64().unwrap().is_prime();
+        } // if fits into u64, reduce to 64-bit check
+
+        if self.is_fermat() {
+            return false;
+        }
+
+        // let bound = self.ref_subtraction(&Mpz::from_u64(5));
+        //let p = self.clone();
+        let single = |x: Mpz, n: usize| {
+            let bound = x.ref_subtraction(&Mpz::from_u64(5));
+            for _ in 0..n {
+                let z = Mpz::rand(x.len(), rng_64)
+                    .ref_euclidean(&bound)
+                    .1
+                    .ref_addition(&Mpz::from_u64(3));
+                if !x.sprp(z) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        let threadcount = usize::from(std::thread::available_parallelism().unwrap()) - 2;
+        let q = self.clone();
+        /*  if k < threadcount{
+           let mut threadvec = vec![];
+           let mut xclone = vec![];
+           for i in 0..k{
+             xclone.push(self.clone())
+           }
+           for i in xclone{
+             threadvec.push(std::thread::spawn(move|| {single(i, 1).clone()}));
+           }
+           for j in threadvec{
+             if !j.join().unwrap(){
+               return false
+             }
+           }
+           return true
+         }
+        // else{*/
+        let mut threadvec = vec![];
+        let mut xclone = vec![];
+        for i in 0..threadcount {
+            xclone.push(self.clone())
+        }
+
+        for i in xclone {
+            threadvec.push(std::thread::spawn(move || single(i, k / threadcount)));
+        }
+        let tally = single(q, k / threadcount); //threadvec.push(std::thread::spawn(move || {single(q.clone(), k/threadcount)}));
+
+        for j in threadvec {
+            if !j.join().unwrap() {
+                return false;
+            }
+        }
+        return tally;
+    }
+
+    // Detects if self is a number of various forms and returns the prime evaluation if it is
+    // One might be tempted to ask why proth numbers are not evaluated, and it's simply the fact that Proth's theorem is actually an extremely inefficient
+    // primality test, in the worst case strong fermat tests are twice as efficient as a Proth test and far stronger in practice.
+    pub(crate) fn form_check(&self) -> bool {
+        // Detects if self is of the form r(k^2 + k) + k + 1
+
+        let sqrt = self.sqrt().0;
+        if sqrt.ref_product(&sqrt) == self.clone() {
+            // detect perfect square
+            return false;
+        }
+
+        !detect_pseudo_mpz(self)
+    }
+
+    pub(crate) fn trial_div(&self) -> bool {
+        //weighted trial division
+
+        if self.is_even() {
+            return false;
+        }
+
+        let rem = mod_slice(&self.limbs[..], 16294579238595022365);
+
+        for i in PRIMELIST[1..16usize].iter() {
+            if rem % *i as u64 == 0 {
+                return false;
+            }
+        }
+
+        let mut supremum: usize = 2048;
+
+        if self.len() < 40 {
+            supremum = self.len() * 50
+        }
+        for i in PRIMELIST[17..supremum].iter() {
+            if self.congruence_u64(*i as u64, 0) {
+                return false;
+            }
+        }
+
+        // insert a sieve that optimizes to eliminate composites (this does not appear to be any more efficient than using the hardcoded primes )
+        return true;
+    }
+
+    // weighted strong fermat bases starting from 2^128
+    pub(crate) fn weighted_sprp(&self) -> bool {
+        const CHECK_LUT: [u8; 5] = [8, 6, 5, 4, 2]; // starting at 2^128    [12, 10, 7, 6, 4, 3, 2, 1];
+        let mut check: usize = 1;
+
+        if self.len() < 8 {
+            check = CHECK_LUT[self.len() - 3] as usize;
+        }
+
+        self.sprp_check(check)
+    }
+
+    pub(crate) fn llt(&self, p: u64) -> bool {
+        // function will never be called in practical implementation as number-theory does not support the scale of computation needed to use it
+        let mut s = Mpz::from_u64(4);
+
+        for _ in 0..(p - 2) {
+            s = s.ref_product(&s);
+            s.normalize();
+            sub_slice(&mut s.limbs[..], &[2]);
+
+            s = s.ref_euclidean(self).1;
+        }
+        s.normalize();
+        if s == Mpz::zero() {
+            return true;
+        }
+        false
+    }
+
+    /// Faster than naive evaluation of sophie prime, returns safe prime if true, otherwise None. As this uses is_prime, the accuracy matches that function exactly as the verification of the safe prime itself is deterministic and solely reliant on the accuracy of the verification of the sophie prime.
+    pub fn is_sophie(&self) -> Option<Self> {
+        if self.is_prime() {
+            let mut safe = self.shl(1);
+            let p = safe.clone();
+            let two = Mpz::from_u64(2);
+            safe.successor();
+
+            if two.exp_residue(&p, &safe) == Mpz::one() {
+                return Some(safe);
+            }
+        }
+        None
+    }
+
+    pub(crate) fn jacobi_check_mpz(&self) -> bool {
+        // Performs a check of the Jacobi
+        let mut witness = 3;
+        loop {
+            if fast_jacobi_mpz(self, witness) == -1 {
+                break;
+            }
+            witness += 1;
+        }
+
+        let witty = Mpz::from_u64(witness);
+        self.is_sprp(&witty)
+    }
     
-    for i in PRIMELIST[1..16usize].iter(){
-        if rem%*i as u64 == 0{
-          return false
+  
+}
+pub(crate) fn fast_jacobi_mpz(x: &Mpz, p: u64) -> i8 {
+    let k = x.word_div(p).1;
+    k.jacobi(&p)
+}
+
+pub(crate) fn detect_pseudo_mpz(x: &Mpz) -> bool {
+    let mut xminus = x.abs();
+    let copy = xminus.clone();
+    xminus.inv_successor();
+    for i in 1..16 {
+        let sq = xminus.word_div(2 * i + 1).0.sqrt().0; // (k*k + k)*(2*i+1) + k + 1 == x
+        let lhs = sq.ref_product(&sq).ref_addition(&sq);
+        let lhs2 = lhs.ref_product(&Mpz::from_u64(2 * i + 1));
+        if lhs.ref_addition(&lhs2).ref_addition(&Mpz::one()) == copy {
+            return true;
         }
     }
-    
-   
-   for i in PRIMELIST[17..supremum as usize].iter(){ // 295 14.074467005s   295 13.65539096s  
-
-
-     if self.congruence_u64(*i as u64,0){
-       return false
-     }
-   }
-   
-   if self.sprp(two)==false{return false}
- 
-  let z = self.sprp_check(check as usize +2);
-     
-   return z
-  
-  }
-  
-  pub(crate) fn llt(&self, p: u64) -> bool{// function will never be called in practical implementation
-  	let mut s = Mpz::from_u64(4);
-
-  	
-  	for i in 0..(p-2){
-  	  s = s.ref_product(&s);
-  	  s.normalize();
-  	  sub_slice(&mut s.limbs[..], &[2]);
-  	  
-  	  s = s.ref_euclidean(&self).1;
-  	}
-  	s.normalize();
-  	if s == Mpz::zero(){return true}
-  	return false
-  }
- 
- /// Faster than naive evaluation of sophie prime, returns safe prime if true, otherwise None
-  pub fn is_sophie(&self) -> Option<Self> {
-  	
-  	if self.is_prime(){
-  	  let mut safe = self.shl(1);
-  	  let p= safe.clone();
-  	  let two = Mpz::from_u64(2);
-  	  safe.successor();
-  	 
-  	 if two.mod_pow(&p,&safe) == Mpz::one() {
-  	    return Some(safe)
-  	 }
-  	 
-  	}
-  	return None
-  }
- 
- }
+    return false;
+}

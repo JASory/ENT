@@ -1,0 +1,31 @@
+Una biblioteca para la teoría de números elemental. Pretende ser simple, versátil, eficaz y, sobre todo, correcta.
+
+A diferencia de la mayoría de las otras bibliotecas de teoría de números, la teoría de números está más generalizada operando sobre anillos de cociente (también llamados clases de residuos en los métodos, es decir, exp_residue para la clase de residuos de pow (x, y) calculada en Z / nZ), en lugar de usar definiciones aritméticas modulares, esto permite resultados más generales que en algunos casos es diferente a la típica definición aritmética modular. Proporcionamos la mayoría de ellos a continuación.
+
+    Z/0Z = Z , en consecuencia, la aritmética realizada sobre él es equivalente a la aritmética en Z, por lo tanto, 4.quadratic_residue(0) == 8
+    Z/-nZ = Z/nZ y por lo tanto 4.residuo_cuadrático(-3) = 4.residuo_cuadrático(3).
+    Los números negativos se evalúan como inversos aditivos en el anillo Z/nZ por simplicidad (excepto en el caso de Z/0Z), entonces (-4).exp_residue(&3,5) == 1 no -4 aunque son equivalentes
+
+Características
+
+    14 funciones teóricas de números no triviales distintas implementadas por todos los tipos de enteros incorporados y enteros de precisión arbitraria
+    Aritmética de anillo Z/nZ, frecuentemente usando algoritmos optimizados.
+    Comprobación de primalidad extremadamente rápida y rigurosamente probada para números enteros inferiores a 2^64+2^42.
+
+Consideraciones de uso
+
+    El tipo de datos más pequeño suele ser el más eficiente, tanto por el procesador como por el hecho de que muchas de las funciones están mejor optimizadas para valores pequeños.
+    Las funciones que tienen una contraparte "marcada" realizan verificaciones de corrección cero, no se asustan y confían en que el usuario garantice que la entrada será válida. Esto es para fines de eficiencia, si no puede garantizar que una entrada cumpla con las pautas, entonces use la variante "marcada".
+    La teoría de números no es una biblioteca de criptografía y no sustituye a los algoritmos rigurosos implementados de forma segura que tienen en cuenta los ataques de los adversarios, la predicción de bifurcaciones, etc.
+    
+    
+Sin embargo, la teoría de números puede superar a otras bibliotecas "criptográficas" en velocidad y corrección.
+
+Por qué es posible que no quieras usar esto
+
+    La API se romperá sin previo aviso. Number-theory ni siquiera se acerca a una versión estable, simplemente se publica para que esté disponible dado que supera a muchas bibliotecas similares. (De hecho, la teoría de números era originalmente un subarchivo de un proyecto de álgebra informática aún privado y, en consecuencia, su funcionalidad lo refleja fuertemente).
+    Las funciones pueden romperse silenciosamente. Fuera de is_prime, ninguna función tiene una prueba rigurosa de corrección (aunque pocas otras bibliotecas la tienen).
+    No utiliza dependencias ni sigue ningún sistema de API externo (es decir, num-traits). Si bien es deliberado mantener la simplicidad y un mayor control del software por parte del desarrollador, los usuarios pueden encontrarlo menos versátil.
+    Solo funciona en plataformas x86-64
+
+verified  = verificado

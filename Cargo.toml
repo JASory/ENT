@@ -1,6 +1,6 @@
 [package]
 name = "number-theory"
-version = "0.0.6"
+version = "0.0.10"
 edition = "2021"
 authors = ["J.A Sory jasory@rust-cas.org"]
 description = "Fast primality, factorization and elementary number theory for integer types"
@@ -12,6 +12,25 @@ categories = ["algorithms", "mathematics"]
 readme      = "README.md"
 
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bench]]
+name = "rand"
+harness = false
+
+[[bench]]
+name = "primality"
+harness = false
+
+[[bench]]
+name = "titanic_prime"
+harness = false
+
+[profile.test] #Strong tests require high optimization to execute in reasonable time 
+opt-level = 2
 
 [dependencies]
+
+[features]
+parallel = []  
+#default = ["parallel"]
+
