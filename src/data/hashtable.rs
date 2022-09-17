@@ -4,10 +4,10 @@
    have much higher bounds, use less memory and most importantly are proven to be correct against all stated inputs.
 
    Additionally some research has been invested in extending the deterministic bounds up to 2^65. While largely unsuccessful, they have produced
-   deterministic tests up to 2^44 and a heuristic base table that successfully eliminates a minimum of 60% of the 2-sprp in the interval
-   2^64;2^65.
+   deterministic tests up to 2^64+2^45 and a heuristic base table that successfully eliminates a minimum of 60% of the 2-sprp in the interval
+   2^64;2^67.
    This permits the construction of a 3-shot primality test with maximum of 2^-40 failure rate in the interval 2^64;2^65, 
-   aka much stronger than random (it would take atleast 10 random tests to achieve the same accuracy). While not deterministic itself, 
+   aka much stronger than random (it would take atleast 6 random tests to achieve the same accuracy). While not deterministic itself, 
    it can be used to strengthen probabilistic tests which are much faster than deterministic variants which require 12-bases in this interval
 
 
