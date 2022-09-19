@@ -16,7 +16,7 @@ Currently implements these functions
 - Liouville function
 - Lagarias derivative
 - Mobius function 
-- Prime-counting function/nth-prime, and prime lists
+- Prime-counting function,nth-prime,prime lists, and random prime generation
 - Integer sqrt/nth root
 - Integer radical
 - K-free
