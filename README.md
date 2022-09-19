@@ -11,10 +11,11 @@ Currently implements these functions
 - Primality
 - Factorization
 - GCD, Extended GCD
-- Euler totient
-- Jordan totient
+- Euler and Jordan totient
 - Dedekind psi
 - Liouville function
+- Lagarias derivative
+- Mobius function 
 - Prime-counting function/nth-prime, and prime lists
 - Integer sqrt/nth root
 - Integer radical
