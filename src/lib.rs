@@ -12,19 +12,19 @@ Features
 
 * 14 distinct non-trivial number-theorectic functions implemented by all builtin integer types and arbitrary precision integer
 * Z/nZ Ring arithmetic, frequently using optimized algorithms.
-* Extremely fast and rigourously proven primality checking for integers under 2^64+2^42.
+* Extremely fast and rigourously proven primality checking for integers under 2^64+2^45.
 
 Considerations for usage
 
  * Smallest datatype is usually most efficient, both due to the processor and the fact that many of the functions are better optimized for small values.
  * Functions that have a "checked" counterpart perform zero correctness checks, **do not panic**, and rely on the user guaranteeing that the input will be valid.
  This is for efficiency purposes, if you cannot guarantee that an input will meet the guidelines then use the "checked" variant. The inputs that result in incorrect  outputs are given under "Failure" for each applicable function. This conditions directly correspond to the conditions that result in None output in the checked variant. 
- * Number-theory is not a cryptography library and is not a substitute for rigourous securely implemented algorithms that consider adversarial attacks, branch-prediction etc. However, number-theory may exceed other "cryptographic" libraries in speed and correctness.
+ * Number-theory is not a cryptography library and is not a substitute for rigourous securely implemented algorithms that consider adversarial attacks, branch-prediction etc. However, number-theory may exceed other "cryptographic" libraries in speed and correctness, possibly even under adversarial conditions.
 
 Why you might not want to use this
 
  * API will break without warning. Number-theory is not even close to a stable release it is simply published to make it available given the fact that it surpasses many similar libraries. (Indeed number-theory was originally a subfile to a still private computer algebra project, and consequently it's functionality strongly reflects this).
- * Functions may be silently broken. Outside of is_prime no functions have a rigourous proof of correctness, (although few other libraries do either).
+ * Functions may be silently broken. Outside of is_prime no functions have a rigourous proof of correctness, (although few other libraries do either, indeed "silently broken" is the norm in mathematical software developed by non-specialists).
  * It doesn't use dependencies or follow any external api system (i.e num-traits). While deliberate to maintain simplicity and greater control of the software on the developer side, users may find it less versatile.
  * Only works on x86-64 platforms
 
@@ -34,6 +34,8 @@ Why you might not want to use this
  * Switch from N-1 primality proofing to Elliptic Curves
  * Implement GNFS
  * Prove correctness for all functions
+ 
+ Only once the last is achieved will number-theory be stabilized. 
 
 
 

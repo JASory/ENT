@@ -145,7 +145,10 @@ impl NumberTheory for u8 {
             panic!("Outside the limit of the datatype")
         }
         if k < 1 {
-            panic!("1 is not a prime")
+            panic!("No prime exists in that interval")
+        }
+        if k == 1{
+          return 2
         }
 
         let form = (1 << (k - 1)) + 1;
@@ -171,6 +174,10 @@ impl NumberTheory for u8 {
     }
 
     fn factor(&self) -> Vec<u8> {
+    
+       if *self < 2{
+        panic!("There is no prime factorization for integers less than 2")
+       }
         let mut n = *self;
         let twofactors = n.trailing_zeros();
         n >>= twofactors;
@@ -298,13 +305,19 @@ impl NumberTheory for u8 {
     }
 
     fn lcm(&self, other: &Self) -> Self {
+        if self == &0 && other == &0{
+          return 0
+        }
         let cf = self.euclid_gcd(other);
-        (*self / cf) * (*other / cf)
+        (*self / cf) * *other
     }
 
     fn checked_lcm(&self, other: &Self) -> Option<Self> {
+         if self == &0 && other == &0{
+           return Some(0)
+         }
         let cf = self.euclid_gcd(other);
-        let (v, flag) = (*self / cf).overflowing_mul(*other / cf);
+        let (v, flag) = (*self / cf).overflowing_mul(*other);
         if flag {
             return None;
         }
@@ -451,12 +464,38 @@ impl NumberTheory for u8 {
         }
         Some(self.legendre(p))
     }
+    
+    fn derivative(&self) -> Option<Self> {
+       let fctr = self.factor();
+       let mut sum : u8 = 0;
+       
+     for i in 0..fctr.len() / 2 {
+        match sum.checked_add(fctr[2 * i + 1] * (*self / fctr[2 * i])){
+          Some(x) => sum = x,
+          None => return None,
+        }
+      }
+    Some(sum)
+    }
 
     fn liouville(&self) -> i8 {
         if (LIOUVILLE_LUT[(*self / 64) as usize] >> (*self % 64)) & 1 == 1 {
             return -1;
         }
         return 1;
+    }
+    
+    fn mobius(&self) -> i8 {
+      let fctr = self.factor();
+      for i in 0..fctr.len()/2{
+        if fctr[2*i+1] == 2{
+         return 0
+        }
+      }
+      if fctr.len()&1 == 1{
+        return -1
+      }
+      return 1
     }
 
     fn mangoldt(&self) -> f64 {

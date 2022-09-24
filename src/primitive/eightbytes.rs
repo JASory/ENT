@@ -186,7 +186,7 @@ impl NumberTheory for u64 {
         if k > 64 {
             panic!("Outside the limit of the datatype")
         }
-        if k < 32 {
+        if k < 33 {
             return u32::prime_gen(k) as u64;
         }
         let form = (1 << (k - 1)) + 1;
@@ -201,6 +201,10 @@ impl NumberTheory for u64 {
     }
 
     fn factor(&self) -> Vec<Self> {
+        if self < &4294967295{
+          return (*self as u32).factor().iter().map(|x| *x as u64).collect::<Vec<u64>>()
+        }
+        
         let mut n = *self;
         let twofactors = n.trailing_zeros();
         n >>= twofactors;
@@ -367,13 +371,19 @@ impl NumberTheory for u64 {
     }
 
     fn lcm(&self, other: &Self) -> Self {
+       if self == &0 && other == &0{
+           return 0
+         }
         let cf = self.euclid_gcd(other);
-        (*self / cf) * (*other / cf)
+        (*self / cf) * *other
     }
 
     fn checked_lcm(&self, other: &Self) -> Option<Self> {
+        if self == &0 && other == &0{
+           return Some(0)
+         }
         let cf = self.euclid_gcd(other);
-        let (v, flag) = (*self / cf).overflowing_mul(*other / cf);
+        let (v, flag) = (*self / cf).overflowing_mul(*other);
         if flag {
             return None;
         }
@@ -496,6 +506,19 @@ impl NumberTheory for u64 {
         }
         return -1;
     }
+    
+    fn derivative(&self) -> Option<Self> {
+       let fctr = self.factor();
+       let mut sum : u64 = 0;
+       
+     for i in 0..fctr.len() / 2 {
+        match sum.checked_add(fctr[2 * i + 1] * (*self / fctr[2 * i])){
+          Some(x) => sum = x,
+          None => return None,
+        }
+      }
+    Some(sum)
+    }
 
     fn mangoldt(&self) -> f64 {
         let fctr = self.factor();
@@ -503,6 +526,19 @@ impl NumberTheory for u64 {
             return 0f64;
         }
         (fctr[0] as f64).ln()
+    }
+    
+    fn mobius(&self) -> i8 {
+      let fctr = self.factor();
+      for i in 0..fctr.len()/2{
+        if fctr[2*i+1] == 2{
+         return 0
+        }
+      }
+      if fctr.len()&1 == 1{
+        return -1
+      }
+      return 1
     }
 
     fn jacobi(&self, k: &Self) -> i8 {
@@ -583,7 +619,7 @@ fn rho_64(n: u64) -> u64 {
 fn rho_64(n: u64) -> u64 {
     // Guarantees that the result is a prime factor
 
-    let mut x = 2; //1152014345543559557,1103577440654186261,
+    let mut x = 2; 
     let mut y = 2;
     let mut d = 1;
     loop {

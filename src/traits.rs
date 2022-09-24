@@ -8,7 +8,9 @@ pub trait NumberTheory {
     ///Random number generation, generally high-quality
     fn rng() -> Self;
 
-    ///Euclidean function, normally called euclidean division
+    ///Euclidean function, normally called euclidean division, returns Q,R such that Q*y + R = x
+    /// # Panic
+    /// y == 0
     fn euclidean_div(&self, other: &Self) -> (Self, Self)
     where
         Self: Sized;
@@ -22,10 +24,10 @@ pub trait NumberTheory {
     determinism, the probability of failure is extremely small and never deterministic (i.e repeating the test will
     almost certainly fail a previous composite that passed).
 
-     N < 2^64 + 2^45 Provably Deterministic, uniquely uses a maximum of 2 strong fermat tests giving it the lowest average complexity publicly known
+     N < 2^64 + 2^46 Provably Deterministic, uniquely uses a maximum of 2 strong fermat tests giving it the lowest average complexity publicly known
 
 
-     N > 2^64 + 2^45  Weighted to ensure 2^-64 probability of failure against a random input.Performs a minimum of 3 sprp checks. Strongest counterexamples are of
+     N > 2^64 + 2^46  Weighted to ensure 2^-64 probability of failure against a random input.Performs a minimum of 3 sprp checks. Strongest counterexamples are of
      the form n = p(x(p-1)+1)(y(p-1)+1) where p is prime and gcd(x,y,p) = 1 and n > 2^512, passing at a rate of approximately 25%. Any other equally strong
       counterexamples are encouraged to be reported.
      Further strengthening the test should be by calling [sprp_check](struct.Mpz.html#method.sprp_check) afterwards **not** by calling is_prime again.
@@ -72,7 +74,7 @@ pub trait NumberTheory {
     fn nth_prime(&self) -> Option<Self>
     where
         Self: Sized;
-    /// Generates an odd prime in the interval 2^(k-1);2^k, always unsigned    
+    /// Generates an odd positive prime in the interval 2^(k-1);2^k . 
     fn prime_gen(k: u32) -> Self;
     /// Prime-counting function, exact evaluation for less than 2^64, approximation beyond that. Not currently feasible beyond 10^12
     fn pi(&self) -> Self;
@@ -187,15 +189,17 @@ pub trait NumberTheory {
 
     /// Liouville function
     fn liouville(&self) -> i8;
-
+    
+    /// Lagarias derivative
+    fn derivative(&self) -> Option<Self>
+    where 
+        Self : Sized;
 
     ///Von Mangoldt function, returns the natural logarithm of self if it is a prime-power
     fn mangoldt(&self) -> f64;
 
-    // Mobius function
-    //fn mobius(&self) -> i8;
-    // Lagarias derivative
-    // fn derivative(&self) -> Self
+    ///  Mobius function
+    fn mobius(&self) -> i8;
 
     /// Jacobi symbol of x,p. 
     /// # Failure
@@ -216,16 +220,10 @@ pub trait NumberTheory {
 
     //Primitive root
 
-    // Derivative
-    // Carmichael function
-    // is carmichael number
-
-    /// Mobius function
-    fn mobius
 
     Future functions
 
-    Primitive root, Modular sqrt, Carmichael, Derivative, Mobius, Paritition function, Kronecker symbol
+    Primitive root, Modular sqrt, Paritition function, Kronecker symbol
     Multiplicative order, Primitive roots, Discrete Logarithm
 
     Split into
@@ -243,8 +241,6 @@ pub trait NumberTheory {
 
      /// Integer partition
     fn partition()
-
-    fn derivative
     */
 }
 

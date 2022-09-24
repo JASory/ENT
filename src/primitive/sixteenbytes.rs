@@ -3,7 +3,7 @@ use crate::arithmetic::mpz::Mpz;
 use crate::data::primes::DET_MAX;
 use crate::data::primes::PRIMELIST;
 use crate::data::primes::PRIME_INV_128;
-use crate::data::primes::PSEUDOPRIMES;
+//use crate::data::primes::PSEUDOPRIMES;
 use crate::montgomery::*;
 use crate::traits::NumberTheory;
 
@@ -31,7 +31,7 @@ impl NumberTheory for u128 {
         }
 
         if self < &DET_MAX {
-            for i in PRIME_INV_128[..256].iter() {
+            for i in PRIME_INV_128[..128].iter(){
                 if (*self).wrapping_mul(*i) < *self {
                     return false;
                 }
@@ -39,15 +39,14 @@ impl NumberTheory for u128 {
             if !sprp_128(*self, 2) {
                 return false;
             }
-
-            if PSEUDOPRIMES.contains(self) {
-                return false;
+            if !sprp_128(*self, 45){
+              return false;
             }
             return true;
-        } else if self < &0x287AB3F173E7553A58DD5F081071D9 {
+        } else if self < &0x5A2553748E42E7B3F08195A7F78C80{
             //2^128/1619
             // 0x287AB3F173E7553A58DD5F081071D9 2^128/1619  0x80000000000000000 0x807C7894D029A85B183F7D819588D
-            for i in PRIME_INV_128[..256].iter() {
+            for i in PRIME_INV_128[..128].iter() {
                 if (*self).wrapping_mul(*i) < *self {
                     return false;
                 }
@@ -65,7 +64,7 @@ impl NumberTheory for u128 {
                 return false;
             }
 
-            for _ in 0..10 {
+            for _ in 0..10{
                 if !sprp_128(*self, u128::rng() % (*self - 3) + 3) {
                     return false;
                 }
@@ -73,7 +72,7 @@ impl NumberTheory for u128 {
 
             return true;
         } else {
-            // values greater than 2^67
+            // values greater than 2^128/727
 
             for i in PRIMELIST[1..64].iter() {
                 if *self % *i as u128 == 0 {
@@ -204,7 +203,7 @@ impl NumberTheory for u128 {
         if k > 128 {
             panic!("Outside the limit of the datatype")
         }
-        if k < 64 {
+        if k < 65 {
             return u64::prime_gen(k) as u128;
         }
         let form = (1 << (k - 1)) + 1;
@@ -219,6 +218,9 @@ impl NumberTheory for u128 {
     }
 
     fn factor(&self) -> Vec<Self> {
+        if self < &(u64::MAX as u128){
+          return (*self as u64).factor().iter().map(|x| *x as u128).collect::<Vec<u128>>()
+        }
         let mut n = *self;
         let twofactors = n.trailing_zeros();
         n >>= twofactors;
@@ -380,13 +382,19 @@ impl NumberTheory for u128 {
     }
 
     fn lcm(&self, other: &Self) -> Self {
+       if self == &0 && other == &0{
+         return 0
+       }
         let cf = self.euclid_gcd(other);
-        (*self / cf) * (*other / cf)
+        (*self / cf) * *other
     }
 
     fn checked_lcm(&self, other: &Self) -> Option<Self> {
+        if self == &0 && other == &0{
+         return Some(0)
+        }
         let cf = self.euclid_gcd(other);
-        let (v, flag) = (*self / cf).overflowing_mul(*other / cf);
+        let (v, flag) = (*self / cf).overflowing_mul(*other);
         if flag {
             return None;
         }
@@ -516,6 +524,19 @@ impl NumberTheory for u128 {
         }
         return -1;
     }
+    
+    fn derivative(&self) -> Option<Self> {
+       let fctr = self.factor();
+       let mut sum : u128 = 0;
+       
+     for i in 0..fctr.len() / 2 {
+        match sum.checked_add(fctr[2 * i + 1] * (*self / fctr[2 * i])){
+          Some(x) => sum = x,
+          None => return None,
+        }
+      }
+    Some(sum)
+    }
 
     fn mangoldt(&self) -> f64 {
         let fctr = self.factor();
@@ -523,6 +544,19 @@ impl NumberTheory for u128 {
             return 0f64;
         }
         (fctr[0] as f64).ln()
+    }
+    
+    fn mobius(&self) -> i8 {
+      let fctr = self.factor();
+      for i in 0..fctr.len()/2{
+        if fctr[2*i+1] == 2{
+         return 0
+        }
+      }
+      if fctr.len()&1 == 1{
+        return -1
+      }
+      return 1
     }
 
     fn jacobi(&self, k: &Self) -> i8 {
@@ -641,8 +675,6 @@ fn mut_shl(pair: &mut (u128, u128), shift: u32) {
         }
     }
 }
-// Interim function borrowed from Jacob Zhong (aka cmpute)
-// While this function does not perform euclidean division as claimed on all inputs, it correctly produces a remainder on numbers of a special form
 // which is all that is necessary until a faster optimization is constructed.
 // Any library that uses this function as a general euclidean function is to be considered critically broken.
 pub fn div_rem1(pair: (u128, u128), other: u128) -> (u128, u128) {

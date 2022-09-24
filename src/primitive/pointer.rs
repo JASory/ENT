@@ -132,6 +132,10 @@ impl NumberTheory for usize {
     fn liouville(&self) -> i8 {
         (*self as u64).liouville()
     }
+    
+    fn derivative(&self) -> Option<Self>{
+       (*self as u64).derivative().map(|y| y as usize)
+    }
 
     fn checked_legendre(&self, p: &Self) -> Option<i8> {
         (*self as u64).checked_legendre(&(*p as u64))
@@ -140,6 +144,11 @@ impl NumberTheory for usize {
     fn mangoldt(&self) -> f64 {
         (*self as u64).mangoldt()
     }
+    
+    fn mobius(&self) -> i8 {
+      (*self as u64).mobius()
+    }
+
 
     fn jacobi(&self, p: &Self) -> i8 {
         (*self as u64).jacobi(&(*p as u64))
@@ -149,16 +158,4 @@ impl NumberTheory for usize {
         (*self as u64).checked_jacobi(&(*p as u64))
     }
 
-    /*
-    // Mobius function
-    //fn mobius(&self) -> i8;
-     // Lagarias derivative
-    // fn derivative(&self) -> Self
-
-    /// Jacobi symbol of self,p. Assumes that p is an odd prime
-    fn jacobi(&self, p: &Self) -> i8;
-
-    /// Jacobi symbol of self,p. Verifies that p is an odd prime, returns None if not.
-    fn checked_jacobi(&self, p: &Self) -> Option<i8>;
-    */
 }

@@ -4,10 +4,10 @@
    have much higher bounds, use less memory and most importantly are proven to be correct against all stated inputs.
 
    Additionally some research has been invested in extending the deterministic bounds up to 2^65. While largely unsuccessful, they have produced
-   deterministic tests up to 2^64+2^45 and a heuristic base table that successfully eliminates a minimum of 60% of the 2-sprp in the interval
-   2^64;2^67.
+   deterministic tests up to 2^45 and a heuristic base table that successfully eliminates a minimum of 60% of the 2-sprp in the interval
+   2^64;2^65.
    This permits the construction of a 3-shot primality test with maximum of 2^-40 failure rate in the interval 2^64;2^65, 
-   aka much stronger than random (it would take atleast 6 random tests to achieve the same accuracy). While not deterministic itself, 
+   aka much stronger than random (it would take atleast 10 random tests to achieve the same accuracy). While not deterministic itself, 
    it can be used to strengthen probabilistic tests which are much faster than deterministic variants which require 12-bases in this interval
 
 
@@ -2221,3 +2221,47 @@ pub (crate) const BASES_35_64 : [u16;32768] = [
 	  0x13d,  0x145,  0x2b9,  0x2cd,  0x11f,  0x1cb,  0x261,  0x40e, 0x1169,  0x217,   0x86,   0x83,  0x2b6,    0x6,    0xf,  0x14d,
 
 ];
+
+ #[test]
+ fn check_sum(){
+ 
+ fn hashdata(data: &[u16]) -> (u16,u16,u64) {
+  let mut sum = 1u64;
+  let product = 6084759759023560598u64;
+  let mut min = u16::MAX;
+  let mut max = 0u16;
+  for i in data{
+   sum = sum.wrapping_mul(product).wrapping_add(*i as u64); 
+   if i < &min {
+     min = *i
+   }
+   if i > &max {
+    max = *i
+   }
+  }
+  return (min,max,sum) 
+}
+ /*
+ fn hashdata8(data: &[u8]) -> (u8,u8,u64) {
+  let mut sum = 1u64;
+  let product = 6084759759023560598u64;
+  let mut min = u8::MAX;
+  let mut max = 0u8;
+  for i in data{
+   sum = sum.wrapping_mul(product).wrapping_add(*i as u64); 
+   if i < &min {
+     min = *i
+   }
+   if i > &max {
+    max = *i
+   }
+  }
+  return (min,max,sum) 
+}
+*/
+   assert_eq!(hashdata(&BASES_35_64[..]), (3,13907,10019156857430916911));
+   assert_eq!(hashdata(&BASE_32[..]), (40, 60544, 5120873848049834519));
+   
+   
+  // assert_eq!()
+ }  

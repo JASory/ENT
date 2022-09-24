@@ -13,6 +13,12 @@ impl NumberTheory for $t{
        }
 
        fn is_sprp(&self, base: &Self) -> bool {
+        if base < &0{
+         if base > self {
+          return (self.abs() as $s).is_sprp(&((self.abs()+(base % self.abs())) as $s))
+         }
+          return (self.abs() as $s).is_sprp(&((self.abs() + *base) as $s))
+        }
            (self.abs() as $s).is_sprp(&(*base as $s))
        }
 
@@ -173,7 +179,7 @@ impl NumberTheory for $t{
         (self.abs() as $s).quadratic_residue(&(n.abs() as $s)) as $t
        }
 
-        fn product_residue(&self, other: &Self, n: &Self) -> Self {
+       fn product_residue(&self, other: &Self, n: &Self) -> Self {
         let mut a = self.clone();
         let mut b = other.clone();
         let modulo = n.abs();
@@ -240,9 +246,17 @@ impl NumberTheory for $t{
     fn liouville(&self) -> i8{
       (*self as $s).liouville()
     }
+    
+    fn derivative(&self) -> Option<Self> {
+      (self.abs() as $s).derivative().map(|y| y as $t)
+    }
 
     fn mangoldt(&self) -> f64 {
       (self.abs() as $s).mangoldt()
+    }
+    
+    fn mobius(&self) -> i8 {
+      (self.abs() as $s).mobius()
     }
 
     fn jacobi(&self, k: &Self) -> i8 {

@@ -385,8 +385,12 @@ impl NumberTheory for Mpz {
     }
 
     fn lcm(&self, other: &Self) -> Self {
+        if self == &Mpz::zero() && other  == &Mpz::zero(){
+          return Mpz::zero()
+        }
+        
         let cf = self.euclid_gcd(other);
-        self.ref_product(other).euclidean_div(&cf).1
+        self.euclidean_div(&cf).1.ref_product(&other)
     }
 
     fn checked_lcm(&self, other: &Self) -> Option<Self> {
@@ -621,6 +625,16 @@ impl NumberTheory for Mpz {
         }
         return -1;
     }
+    
+    fn derivative(&self) -> Option<Self> {
+       let fctr = self.factor();
+       let mut sum = Mpz::zero();
+       
+     for i in 0..fctr.len() / 2 {
+        sum.mut_addition(fctr[2*i+1].ref_product(&self.ref_euclidean(&fctr[2*i]).0))
+      }
+    Some(sum)
+    }
 
     fn mangoldt(&self) -> f64 {
         let fctr = self.factor();
@@ -628,6 +642,19 @@ impl NumberTheory for Mpz {
             return 0f64;
         }
         return fctr[0].ln();
+    }
+    
+    fn mobius(&self) -> i8 {
+      let fctr = self.factor();
+      for i in 0..fctr.len()/2{
+        if fctr[2*i+1] == Mpz::from_u64(2){
+         return 0
+        }
+      }
+      if fctr.len()&1 == 1{
+        return -1
+      }
+      return 1
     }
 
     fn jacobi(&self, k: &Self) -> i8 {

@@ -3,7 +3,7 @@
   Look-up tables to optimize number-theorectic functions
 
 */
-// Bitwise Look-up table for integers under 2^16
+// Bitwise Look-up table for integers under 2^16, Mobius function is treated as an extension of the Liouville function so this is used for both
 #[rustfmt::skip]
  pub(crate)  const LIOUVILLE_LUT : [u64;1024] = [
  
@@ -265,5 +265,27 @@
 	  0xe2d8ec436ad726ed ,  0xad52813608753e97 ,  0xe07572f12a6bcea1 ,  0x363781554b05e595 , // 65280
 
  
- 
  ];
+ 
+ #[test]
+ fn check_sum(){
+ fn hashdata64(data: &[u64]) -> (u64,u64,u64) {
+  let mut sum = 1u64;
+  let product = 6084759759023560598u64;
+  let mut min = u64::MAX;
+  let mut max = 0u64;
+  for i in data{
+   sum = sum.wrapping_mul(product).wrapping_add(*i); 
+   if i < &min {
+     min = *i
+   }
+   if i > &max {
+    max = *i
+   }
+  }
+  return (min,max,sum) 
+}
+
+assert_eq!(hashdata64(&LIOUVILLE_LUT[..]), (33719405988736038, 18431357061890889188, 8608577211795710703))
+
+ }
