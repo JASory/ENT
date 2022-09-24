@@ -1,0 +1,94 @@
+
+     
+ Hashes for each source code file as computed by OpenSSL version {OpenSSL 1.1.1n  15 Mar 2022} (from Debian 11 stable repository)
+
+
+                                                                HASH
+
+
+File Name                                            (SHA-512-256 & SHA-3-256)
+____________________________________________________________________________________________________________________________
+
+Cargo.toml                              734abb70413dcf16cbeee2822282ecaf6c4b265cdd540efaf1bb35f2828f0cc4     
+                                        633bdf5984c24c5f3a88b5b63cc14cb9e90e33d507149dfa587fd3e0337217e0
+                                        
+/src/arithmetic/conversion.rs           fd75a8a7386b8db7ac254e28c91dc60cd27973885cbb980dae28935e8703c53f
+                                        aba2f6d5a811b06fb60952d94f0d742dfb2c344118397fbf4f5da4794048146c
+
+/src/arithmetic/inlineops.rs            c7348eaecb2404997e91fc86f60ba5dadc2abada443ad4f7cede19b486ba3d8f
+                                        68e9b216773785786faa440e54499547216cfeab794a782b888b794644444215
+
+/src/arithmetic/mpz.rs                  7e594461211526170f4318630ab1727becd3b8976a5b221360582f7dd817c989
+                                        f60a5e494b7975afe51f467c21860709b5d0d2ac2966fed56c7c1e561e7131ab
+
+/src/arithmetic/mpz_arith.rs            61f25f348c02c33848e283d616b094e8d84899f0dc7a650f11de15486354a59f
+                                        297dfb4836d39d82dc5906851f58835eb3272f0844052527d01cf5091beb489f
+
+/src/arithmetic/mpz_ent.rs              92b9756d0a124f1260d3ab1841c96f791f3ee960078a20184d6b332ba3fdc2a3
+					                              94b783844413663480470686389f2f8a5c0cd707ac24f541978c5a54ab3d4a08
+
+/src/arithmetic/mpz_prime.rs            48685d75c514477fc7ff318c1890aea816abe0a5c67e68fa89dc52a233819d5b
+                                        3abaaec4f0b012d8afd0030b32c7a80f21330d338a640bbb569322bf6e86b1b1
+
+/src/arithmetic/muldiv.rs               fe74988e27aa53f4d3e786a2882175c5205870e5db5120879167048cab050533
+                                        ade1a3fb1afd5f4c85596af1018d60581a29014e45316ef4630e717e0f9e36d7
+
+/src/arithmetic/sign.rs                 3d6f327878c619c181ddbd9ccb2356d655c278c0d7177530ec7e0ec78d536f41
+                                        f3406b90f53ab49f222bb93bd07bf95c87c3d229f4f36dc96c1124aa4bb74d9f
+
+/src/arithmetic/sliceops.rs             3e7d2cc1a138f0b40a0b9e88e4d1de8c905c56e17d845de0176a488f92bca50a
+                                        340e0390527ec65e2f546974c528fd0aa9e2d46b6affa64ea317741e7dee6d5a
+
+/src/arithmetic.rs                      1beb2ce6932ff3b8a25ac7c70d6016cb92f3502a289e784dddcb9b1c2692c92e
+                                        a75c7e05ab7c843f67d9b110dc3919296d4e2b2af77caf4de81c9e4ec7ab897c
+
+/src/data/hashtable.rs                  d7fef8dec687835739d522a32f4cc9fb89c05d4d37a22e9f1e7eb6ffb09e0700
+                                        2360d5b129229b603bbc357230246a3ad53afe6e947aafc43973f3c45182656c
+
+/src/data/nt_data.rs                    522c0e592496efaaacf65ef0682113b4eec2f9630b757e5e6d703b11842e5da6
+                                        962fba433e3679487e3e55952a7dedccf9a6162ba530ca57e66d9fa315b433ad
+
+/src/data/primes.rs                     ab4e0d9d8bcc2b737a0313325f4b1b6a5d82e4f14ca334e5685f533b4a4ea572
+                                        0cb00f10934db1e49c70c2b9582fec7391e0bd054d2ae6a1746cbc20cdc1d45c
+
+/src/data.rs                            e43e2d29c7322a7c2a80d0c6e7cc9b70ee8987950df4728c7ee1f4db44eb89e3
+                                        c4fe15ffe119c56bc9e69ccc6341c47298b7160c9eb09414ebe3d63dfb983616
+
+/src/lib.rs                             6b98a9b525a3a1d94591eee2a036b30ce9c2cc281dcb9e24c6bfe79bffd2ad08
+                                        92ad05fabbe841e9750a9a07e7c96c578ce8c878b2ecdcfe2f6cd541d0091ac9
+
+/src/montgomery.rs                      be9f81fc2f34335c0be32b129588bfe8c026858bc15b9a072e662ee7930519d1
+                                        e7f1b6875a0e2bbf96a728a80a6f446093ebb7da49c6dd8719ba85708eb37f1e
+
+/src/primitive/byte.rs                  5c4e310933badf71fa530995c00a6f6d3b9d70a70ea618b37373ef485fdc02bc
+                                        3c40ca0442776405d4a3e94d4569416ca923cb2362672de15dc51316370592df
+                                    
+/src/primitive/eightbytes.rs            28548a2dbac2472910549ea161631d495e15c500bf0ac87d3f91bd1e3cf8a917
+                                        93a460da027f1e994065268b60bd05e2b5fcbe951b11ae08876abb82e26d2be2
+
+/src/primitive/fourbytes.rs             c1faf504505d2520d033a5869847bde389580c7d0a1aa60aea203eccc6628c1c
+                                        c3eeba4e6a3cbce7ae4799aed4ca14ddd6f4a71a1dd168768a0cb6f2886937ff
+
+/src/primitive/pointer.rs               19072fe09c4ca8a1f788121148d7899855144d530e70ea0179b94b9b68add1a8
+                                        9b4c1c13a5e609f60ae625a3dc506eab3c5799f8191ce5c56371eed22f5bee06
+
+/src/primitive/signednt.rs              9423fbcbd24ed1550a358e932b9d4729609800476ee503e90afc8092f0efb667
+                                        6f552f3d22b8107e13c1841be5a2317a1631ca4c00d515d0ab5e3915c47e0af5
+
+/src/primitive/sixteenbytes.rs          507b4ad93c17021b5a0ede66d64c2f0b1ce27cdfb4395c60906fe8214d307a81
+                                        efdbd90782fede4d23d8a3f9002e7a6fe97a591831521cf0c0719a9ac61e7b78    
+
+
+/src/primitive/twobytes.rs              e944d67969e7452cc996add70937b1ac69fe27791cc3c62faa06d0c380a4c570
+                                        690b6098005ec5729a31e4ac1f9593a0a47a1a1932095160f2791c20c65b3d93
+
+
+/src/primitive.rs                       0ae7fdea9de0dbb02b6a1d93df920446e314b294bc07cdc468f97b7675b93ec3
+                                        a472c1b3b2cf1c9cb9a0303f0cfe5bde689cf36ab668a9c4684f6b15e55b4a7e
+
+
+/src/sieve.rs                           2ab8769e54f8b46282568a7a1b914e5974755894e1151380ed32264877548c98
+                                        e6077f5100c2782197fa09695a1ea4d6fedafc141f135dea4a0639305630353d
+
+/src/traits.rs                          1ed79d7dad13278e5d5b126da990216d2f7e74357b09561e91df52e2f643b3af
+                                        4bd506c019ecd50c4b1dab49864c909ea4cb5b39211752fce9696467dd1e88dd
