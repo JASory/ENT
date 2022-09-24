@@ -2,7 +2,7 @@
 
 Elementary Number Theory for Integers in Rust
 
-The fastest provably correct library for primality checking in the interval 0;2^64 + 2^45 (+ 2^44) that is publicly available. Algebraic definitions of primality and factorization are used, permitting checks like -127.is_prime() to return true and unique factorizations to be considered unsigned.
+The fastest provably correct library for primality checking in the interval 0;2^64 + 2^46 that is publicly available. Algebraic definitions of primality and factorization are used, permitting checks like -127.is_prime() to return true and unique factorizations to be considered unsigned.
 
 
 
@@ -11,12 +11,10 @@ Currently implements these functions
 - Primality
 - Factorization
 - GCD, Extended GCD
-- Euler and Jordan totient
+- Euler & Jordan totients 
 - Dedekind psi
-- Liouville function
-- Lagarias derivative
-- Mobius function 
-- Prime-counting function,nth-prime,prime lists, and random prime generation
+- Liouville, and Mobius function
+- Prime-counting function/nth-prime, and prime lists
 - Integer sqrt/nth root
 - Integer radical
 - K-free
