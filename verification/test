@@ -1,0 +1,35 @@
+
+
+/*
+
+     Battery of tests 
+     
+     If numbertheory software passes all these tests then we can produce the hashes 
+     
+     Note that these tests are still in development so the policy of "correct software being verfied by hash" is not applicable
+
+*/  
+  
+  
+  
+                       Claim                                  Tests                                                   Automated   Argument      
+________________________________________________________________________________________________________________________________________________
+
+RNG            Evenly distributed random number        
+
+is_prime       Correct under 2^64 + 2^45,                 Enumerate 0;2^35                                             Yes          Proof
+               2^-64 error rate for greater values        Check 2-SPRPs up to 2^64+2^45                                Yes          Proof
+                                                          Check (k+1)(nk+1) where n < 65535                            
+                                                          and the product is less than 2^67 is filtered with 
+                                                          no greater than 4 counterexamples                            Yes          Statistical
+                                                          Enumerate 2^64;2^64+2^40                                     No           Proof    
+
+is_sprp        Correct for all intervals
+
+jacobi         Correct for all intervals 
+
+legendre       Correct for all intervals 
+
+
+
+                                                 
