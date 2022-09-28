@@ -8,7 +8,7 @@ Prime Data used for primality testing
 this is approximately 52 trillion higher than the bound of 2^64, (and over 1 trillion more primes) provided by other tests and
 continously increases due to research by J.A Sory
 */
-pub(crate) const DET_MAX: u128 = 0x10000300000000000; // // current bound 2^64 + 2^45 + 2^44
+pub(crate) const DET_MAX: u128 = 0x100004E0000000000; // // current bound 2^64 + 2^46 + 2^43 + 2^42 + 2^41
 
 // List of Mersenne prime exponents, shortcuts computation as all Mersenne's not listed below the bound of 57885161 have been proven composite
 pub(crate) const MERSENNE_LIST: [u32; 42] = [
