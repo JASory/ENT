@@ -3,7 +3,6 @@ use crate::arithmetic::mpz::Mpz;
 use crate::data::primes::DET_MAX;
 use crate::data::primes::PRIMELIST;
 use crate::data::primes::PRIME_INV_128;
-//use crate::data::primes::PSEUDOPRIMES;
 use crate::montgomery::*;
 use crate::traits::NumberTheory;
 
@@ -39,7 +38,7 @@ impl NumberTheory for u128 {
             if !sprp_128(*self, 2) {
                 return false;
             }
-            if !sprp_128(*self, 45){
+            if !sprp_128(*self, 99){
               return false;
             }
             return true;
@@ -675,7 +674,7 @@ fn mut_shl(pair: &mut (u128, u128), shift: u32) {
         }
     }
 }
-// which is all that is necessary until a faster optimization is constructed.
+
 // Any library that uses this function as a general euclidean function is to be considered critically broken.
 pub fn div_rem1(pair: (u128, u128), other: u128) -> (u128, u128) {
     //takes hi,lo pair
