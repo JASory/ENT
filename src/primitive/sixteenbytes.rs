@@ -10,6 +10,13 @@ impl NumberTheory for u128 {
     fn rng() -> Self {
         fuse(rng_64(), rng_64())
     }
+    
+    fn residue(&self, ring: &Self) -> Self{
+      if ring == &0{
+        return *self
+      }
+        *self % *ring
+    } 
 
     fn euclidean_div(&self, other: &Self) -> (Self, Self) {
         (*self / *other, *self % *other)
@@ -38,13 +45,11 @@ impl NumberTheory for u128 {
             if !sprp_128(*self, 2) {
                 return false;
             }
-            if !sprp_128(*self, 99){
+            if !sprp_128(*self, 135){
               return false;
             }
             return true;
         } else if self < &0x5A2553748E42E7B3F08195A7F78C80{
-            //2^128/1619
-            // 0x287AB3F173E7553A58DD5F081071D9 2^128/1619  0x80000000000000000 0x807C7894D029A85B183F7D819588D
             for i in PRIME_INV_128[..128].iter() {
                 if (*self).wrapping_mul(*i) < *self {
                     return false;
@@ -674,7 +679,7 @@ fn mut_shl(pair: &mut (u128, u128), shift: u32) {
         }
     }
 }
-
+// which is all that is necessary until a faster optimization is constructed.
 // Any library that uses this function as a general euclidean function is to be considered critically broken.
 pub fn div_rem1(pair: (u128, u128), other: u128) -> (u128, u128) {
     //takes hi,lo pair

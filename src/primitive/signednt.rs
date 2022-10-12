@@ -7,6 +7,16 @@ impl NumberTheory for $t{
        fn rng() -> $t {
          <$s>::rng() as $t
        }
+       
+       fn residue(&self, ring: &Self) -> Self{
+         if ring == &0{
+           return *self
+          }
+          if self < &0{
+           return ring.abs() -(*self % ring.abs())
+          }
+          *self % ring.abs()
+       } 
 
        fn euclidean_div(&self, other: &Self) -> (Self, Self) {
            (*self/ *other, *self % *other)

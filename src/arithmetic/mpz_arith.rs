@@ -63,6 +63,7 @@ impl Mpz {
 
         self.limbs = trail_zeroes;
     }
+    
 /// Shift-left k places in-place
     pub fn mut_shr(&mut self, shift: usize) {
         let mut carry = 0u64;
@@ -213,6 +214,33 @@ impl Mpz {
             self.sign = self.sign.mul(&other.sign);
         }
     }
+    /// Unsigned in-place multiply by x and add y 
+    pub fn mut_scale_add(&mut self, x: u64, y: u64){
+     let mut carry = scale_slice(&mut self.limbs[..],x);
+     carry += add_slice(&mut self.limbs[..],&[y]) as u64;
+     if carry > 0{
+       self.limbs.push(carry);
+     }
+    }
+    
+     /// Unsigned in-place multiply by x and add y 
+    pub fn scale_add(&self, x: u64, y: u64) -> Self{
+     let mut k = self.clone();
+     k.mut_scale_add(x,y);
+     k
+    }
+    
+    
+    /// x*x squaring 
+    pub fn sqr(&self) -> Self {
+      self.ref_product(self)
+    }
+    
+    /// x*x squaring in-place
+    pub fn mut_sqr(&mut self){
+      self.mut_product(self.clone());
+    }
+        
   /// Returns x/y and x mod y 
     pub fn ref_euclidean(&self, other: &Self) -> (Self, Self) {
         let mut dividend = Mpz::from_slice(Sign::Positive, &self.limbs[..]);

@@ -14,6 +14,17 @@ impl NumberTheory for Mpz {
     fn rng() -> Self {
         Mpz::unchecked_new(Sign::Positive, vec![rng_64(), rng_64(), rng_64(), rng_64()])
     }
+    
+    fn residue(&self, ring: &Self) -> Self{
+      if ring.clone() == Mpz::zero(){
+        return self.clone()
+      } 
+      let rem = self.ref_euclidean(&ring).1;
+      if !self.is_positive(){
+        return self.ref_subtraction(&rem)
+      }
+      return rem
+    }
 
     fn euclidean_div(&self, other: &Self) -> (Self, Self) {
         let (mut quo, mut rem) = self.ref_euclidean(other);
@@ -238,10 +249,8 @@ impl NumberTheory for Mpz {
         loop {
             // loops until it has either been shown to be prime or composite
 
-            let mut witness = Mpz::rand(self.len(), u64::rng)
-                .ref_euclidean(&x_minus.ref_subtraction(&Mpz::one()))
-                .1
-                .ref_addition(&Mpz::from_u64(2)); //Self::rng()%(x-2) + 2;
+            let mut witness = Mpz::rand((self.bit_length()-1) as usize);
+      
 
             'witness: loop {
                 if witness.euclid_gcd(self) == Mpz::one() {
@@ -279,7 +288,8 @@ impl NumberTheory for Mpz {
             Some(x) => {
                 let mut primevector = vec![];
                 let mut p = self.clone();
-                for _ in 0..x {
+              //  let primevec = 17000u64.prime_list(&30_000);
+                for _ in 0..x{
                     if p.is_prime() {
                         primevector.push(p.clone())
                     }
@@ -291,6 +301,35 @@ impl NumberTheory for Mpz {
         }
         //  return Vec::new();
     }
+    /*
+    fn prime_list2(&self, sup: &Self) -> Vec<Self>{
+      let mut delta = self.ref_subtraction(sup);
+      delta.successor();
+      
+      match delta.to_u64() {
+            Some(x) => {
+                let mut primevector = vec![];
+                let mut p = self.clone();
+                let primevec = 17000u64.prime_list(&30_000);
+                
+                for _ in 0..x{
+                
+                if p.trial_div()&p.trial_list(){
+                  
+                 }
+                }
+                    if p.is_prime() {
+                        primevector.push(p.clone())
+                    }
+                    p.successor();
+                }
+                primevector
+            }
+            None => panic!("Incomputably large interval"),
+        }
+      
+    }
+    */
     /*
          #[cfg(feature="parallel")]
         fn prime_list(&self, sup: &Self) -> Vec<Self> {
@@ -332,16 +371,15 @@ impl NumberTheory for Mpz {
         let mut form = Mpz::one().shl(x as usize - 1);
         let bitlength = form.ref_subtraction(&Mpz::one());
         form.successor();
-        let len = (x / 64) as usize;
         loop {
-            let mut k = Mpz::rand(len, u64::rng);
+            let mut k = Mpz::rand(x as usize);
             k.mut_and(&bitlength);
             k.mut_or(&form);
             if k.is_prime() {
                 return k;
             }
         }
-    }
+    } 
 
     fn euclid_gcd(&self, other: &Self) -> Self {
         let mut a = self.clone();

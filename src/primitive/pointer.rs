@@ -4,7 +4,10 @@ impl NumberTheory for usize {
     fn rng() -> Self {
         u64::rng() as usize
     }
-
+    
+    fn residue(&self, ring: &Self) -> Self {
+      (*self as u64).residue(&(*ring as u64)) as usize
+    }
     fn euclidean_div(&self, other: &Self) -> (Self, Self) {
         let (quo, rem) = (*self as u64).euclidean_div(&(*other as u64));
         (quo as usize, rem as usize)

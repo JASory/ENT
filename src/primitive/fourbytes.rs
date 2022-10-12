@@ -11,6 +11,13 @@ impl NumberTheory for u32 {
     fn rng() -> Self {
         rng_32()
     }
+    
+    fn residue(&self, ring: &Self) -> Self{
+      if ring == &0{
+        return *self
+      }
+        *self % *ring
+    } 
 
     fn euclidean_div(&self, other: &Self) -> (Self, Self) {
         (*self / *other, *self % *other)

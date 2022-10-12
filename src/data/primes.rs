@@ -1,14 +1,16 @@
 /*
-Prime Data used for primality testing
 
+      Prime Data used for primality testing
+
+
+
+
+  "DET_MAX" is the upperbound for deterministic tests, all primes below this number receive a maximum of 2 sprp tests,
+   a considerable speed up over the minimum of 12 tests that have been previously proven, note that
+   this is approximately  145 trillion higher than the bound of 2^64, (and over 3 trillion more primes) provided by other tests and
+   continously increases due to research by J.A Sory
 */
-/*
- "DET_MAX" is the upperbound for deterministic tests, all primes below this number receive a maximum of 2 sprp tests,
- a considerable speed up over the minimum of 12 tests that have been previously proven, note that
-this is approximately 52 trillion higher than the bound of 2^64, (and over 1 trillion more primes) provided by other tests and
-continously increases due to research by J.A Sory
-*/
-pub(crate) const DET_MAX: u128 = 0x100004E0000000000; // // current bound 2^64 + 2^46 + 2^43 + 2^42 + 2^41
+pub(crate) const DET_MAX: u128 = 0x10000840000000000; // current bound 2^64 + 2^47 + 2^42
 
 // List of Mersenne prime exponents, shortcuts computation as all Mersenne's not listed below the bound of 57885161 have been proven composite
 pub(crate) const MERSENNE_LIST: [u32; 42] = [
@@ -16,7 +18,7 @@ pub(crate) const MERSENNE_LIST: [u32; 42] = [
     23209, 44497, 86243, 110503, 132049, 216091, 756839, 859433, 1257787, 1398269, 2976221,
     3021377, 6972593, 13466917, 20996011, 24036583, 25964951, 30402457, 32582657, 37156667,
     42643801, 43112609, 57885161, 74207281, 77232917, 82589933,
-];
+]; 
 
 // Multiplicative inverse of odd integers in Z[2^8]
 #[rustfmt::skip]
@@ -33,7 +35,7 @@ pub(crate) const INV_8 : [u8; 128] = [
 
 ];
 
-// Multiplicative inverse of the first 256 odd primes (3..1621 inclusive), in Z[2^64], likely excessive look into reducing
+// Multiplicative inverse of the first 256 odd primes (3..1621 inclusive), in Z[2^64]
 #[rustfmt::skip]
 pub(crate) static PRIME_INV_64: [u64; 256] = [
     
@@ -287,13 +289,13 @@ pub(crate) const PRIMELIST :  [u16;2048] =  [
    for i in PRIME_INV_64{
     sum = sum.wrapping_add(i)
    }
-   assert_eq!(sum,12007854724614644508);
+   assert_eq!(sum,14247534216423351310);
    sum = 0;
    
    for i in PRIME_INV_128{
      sum = sum.wrapping_add(i as u64).wrapping_add((i>>64) as u64)
    }
-   assert_eq!(sum, 12807824509354609316);
+   assert_eq!(sum, 2833601251621510603);
    sum = 0;
    for i in PRIMELIST{
         sum = sum.wrapping_add(i as u64);

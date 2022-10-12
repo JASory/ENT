@@ -14,7 +14,12 @@ pub trait NumberTheory {
     fn euclidean_div(&self, other: &Self) -> (Self, Self)
     where
         Self: Sized;
-    /** Strong probable prime test.Performs Miller Rabin's algorithm exactly which means that if gcd(x,base) > 1 and x is a prime then it will be flagged as composite
+        
+    /// Returns the representation of x in the ring Z\[n\]     
+    fn residue(&self, ring: &Self) -> Self; 
+       
+    /** Strong probable prime test.Performs Artjuhov-Selfridge test exactly which means that if gcd(x,base) > 1 and x is a prime 
+    then it will be flagged as composite
 
     Correct primality tests account for this, so it is up to the user to account for them as well.
     */
@@ -24,24 +29,32 @@ pub trait NumberTheory {
     determinism, the probability of failure is extremely small and never deterministic (i.e repeating the test will
     almost certainly fail a previous composite that passed).
 
-     N < 2^64 + 2^46 Provably Deterministic, uniquely uses a maximum of 2 strong fermat tests giving it the lowest average complexity publicly known
+     N < 2^64 + 2^47 Provably Deterministic, uniquely uses a maximum of 2 strong fermat tests giving it the lowest average complexity 
+    publicly known. Average complexity 0.3  tests, worst-case 2.6 sprp checks (against 2^64-59)
 
 
-     N > 2^64 + 2^46  Weighted to ensure 2^-64 probability of failure against a random input.Performs a minimum of 3 sprp checks. Strongest counterexamples are of
-     the form n = p(x(p-1)+1)(y(p-1)+1) where p is prime and gcd(x,y,p) = 1 and n > 2^512, passing at a rate of approximately 25%. Any other equally strong
-      counterexamples are encouraged to be reported.
-     Further strengthening the test should be by calling [sprp_check](struct.Mpz.html#method.sprp_check) afterwards **not** by calling is_prime again.
+     N > 2^64 + 2^47  Weighted to ensure 2^-64 probability of failure against a random input.Performs a minimum of 3 sprp checks. 
+     Strongest counterexamples are of the form n = p(x(p-1)+1)(y(p-1)+1) where p is prime and gcd(x,y,p) = 1 and n > 2^512, passing at 
+     a rate of approximately 25%. Any other equally strong counterexamples are encouraged to be reported. Further strengthening the test 
+     should be by calling [sprp_check](struct.Mpz.html#method.sprp_check) afterwards **not** by calling is_prime again. Average complexity 0.18
+      worst case 12 sprp checks (typical worst case is around 3.1, 12 is the absolute worst case against a very narrow interval). 
 
 
      Mersenne : Deterministic, not computed
 
-     Fermat : Deterministic, not computed,  assumed to not exist beyond 2^64 .
+     Fermat : Deterministic, not computed,  assumed to not exist beyond 65537 .
     */
     /* {undocumented comment} is_prime is further notable for having the following properties : 
-        highest single-shot bound (2^35 or eight times higher than )
+        highest single-shot bound (2^35 or eight times higher than 2^32 which is the standard in all other hashtable tests)
         highest bound for any test with less than 12 checks (except possibly the Baille-PSW test, although it is not a MR test)
         the first correct 2-shot test (see /data/hashtable for more information on assessment and comparison with other attempts)
-        Low memory relative to it's performance, not only is it 
+        Low memory relative to it's performance. 
+        One might be curious as to why 3 sprp tests are selected,  this is due to a  special configuration of checks that makes them 
+        equivalent to around 5 standard tests, so in reality not only does is_prime meet the advertised requirements it far exceeds it, being
+        fully deterministic against nearly half of all pseudoprimes. Additionally Lucas sequence and quadratic Frobenius tests are not used
+        because the current configuration is trivially parallelizable to the cost of only a single sprp test. (versus two for a lucas and
+         3 for a Frobenius). As stated in the documented comment is_prime is configured to be optimal in the average case, the Carmichael 
+         numbers that do pass with a relatively high probability are statistically so rare that they are inconsequential.
     */    
     fn is_prime(&self) -> bool;
 
@@ -74,8 +87,16 @@ pub trait NumberTheory {
     fn nth_prime(&self) -> Option<Self>
     where
         Self: Sized;
+    
+    /*
+    fn checked_prime_gen(k: u32) -> Option<Self>
+    where 
+        Self: Sized;
+    */    
+        
     /// Generates an odd positive prime in the interval 2^(k-1);2^k . 
     fn prime_gen(k: u32) -> Self;
+ 
     /// Prime-counting function, exact evaluation for less than 2^64, approximation beyond that. Not currently feasible beyond 10^12
     fn pi(&self) -> Self;
 
@@ -83,12 +104,14 @@ pub trait NumberTheory {
     fn factor(&self) -> Vec<Self>
     where
         Self: Sized;
-    /// Returns at least one solution to the equation x*x = n where x in Z\[i\] (aka the Gaussian integers).
+        
+    /// Returns the integer component of at least one solution to the equation x*x = n where x in Z\[i\] (aka the Gaussian integers).
     /// When   x  < 0 the result is (sqrt(x),1) otherwise it is the (sqrt(x),0)
     fn sqrt(&self) -> (Self, Self)
     where
         Self: Sized;
-    /// Returns one of the solutions to the equation x*x..*x where x in Z\[i\]
+        
+    /// Returns the integer component of one of the solutions to the equation x*x..*x where x in Z\[i\]
     fn nth_root(&self, n: &Self) -> (Self, Self)
     where
         Self: Sized;
@@ -126,7 +149,10 @@ pub trait NumberTheory {
     fn checked_lcm(&self, other: &Self) -> Option<Self>
     where
         Self: Sized;
-
+        
+    // Carmichael function 
+   // fn carmichael(&self) -> Self;
+    
     /// Counts the number of coprimes from 0 to self
     fn euler_totient(&self) -> Self;
 
@@ -144,11 +170,11 @@ pub trait NumberTheory {
     where
         Self: Sized;
 
-    /// Returns x*y mod n, panics if n = 0
+    /// Returns x*y mod n
 
     fn product_residue(&self, other: &Self, n: &Self) -> Self;
 
-    /// Returns x*x mod n, similar to product_residue except more optimized squaring. Panics if n = 0
+    /// Returns x*x mod n, similar to product_residue except more optimized squaring.
     fn quadratic_residue(&self, n: &Self) -> Self;
 
     /** Returns x^y mod n, generally called mod_pow in other libraries. If y < 0 returns -x^|y| mod n,
@@ -166,8 +192,11 @@ pub trait NumberTheory {
 
     /// Determines of a number is k-free, i.e square-free, cube-free etc. . .
     fn k_free(&self, k: &Self) -> bool;
-
-    //fn partition(&self) -> u128;
+/*
+    fn partition(&self) -> Option<Self>
+    where
+        Self: Sized;
+        */
     /// Returns the product of each prime such that p | n
     fn radical(&self) -> Self;
 
@@ -183,7 +212,7 @@ pub trait NumberTheory {
     fn legendre(&self, p: &Self) -> i8;
     
     /// Legendre symbol of a,p. 
-    /// #None 
+    /// # None 
     /// P is not an odd prime
     fn checked_legendre(&self, p: &Self) -> Option<i8>;
 
@@ -223,24 +252,18 @@ pub trait NumberTheory {
 
     Future functions
 
-    Primitive root, Modular sqrt, Paritition function, Kronecker symbol
-    Multiplicative order, Primitive roots, Discrete Logarithm
 
-    Split into
-
-
-    modular sqrt
-    checked_modular_sqrt
-
-    checked_primitive_root
-
-    primitive_root
+kronecker symbol
+power residue
+carmichael
+partition
+multiplicative order
+primitive root
+primitive root of unity
+index
+sqrt residue
 
 
-    
-
-     /// Integer partition
-    fn partition()
     */
 }
 

@@ -1,4 +1,5 @@
 use crate::data::nt_data::LIOUVILLE_LUT;
+use crate::data::nt_data::EULER_TOTIENT_LUT;
 use crate::data::primes::PRIMELIST;
 use crate::traits::NumberTheory;
 
@@ -8,6 +9,13 @@ impl NumberTheory for u8 {
     fn rng() -> Self {
         (rng_32() >> 24) as u8
     }
+    
+    fn residue(&self, ring: &Self) -> Self{
+      if ring == &0{
+        return *self
+      }
+        *self % *ring
+    } 
 
     fn euclidean_div(&self, other: &Self) -> (Self, Self) {
         (*self / *other, *self % *other)
@@ -325,10 +333,7 @@ impl NumberTheory for u8 {
     }
 
     fn euler_totient(&self) -> u8 {
-        let factors = self.factor();
-        let numerator = factors.iter().step_by(2).map(|x| x - 1u8).product::<u8>();
-        let denominator = factors.iter().step_by(2).product::<u8>();
-        (self / denominator) * numerator
+        EULER_TOTIENT_LUT[*self as usize]
     }
 
     fn jordan_totient(&self, k: &Self) -> Option<Self> {
