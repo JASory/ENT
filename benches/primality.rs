@@ -11,7 +11,7 @@ Benchmark competition and show errors
   num-integer  Compare gcd 
   num-bigint    
   malachite                 The only real comparable library
-  primal     is_prime error
+  primal     is_prime error (since fixed due to the author)
   primetools
   red_primality
   glass-pumpkin      Baille-psw (lucas test) is broken and the miller rabin over small intervals is far too weak (atleast in old versions) 
