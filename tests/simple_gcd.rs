@@ -16,7 +16,7 @@ fn gcds() {
         7
     );
 
-    let (gcd, bz1, bz2) = Mpz::from_u64(36).eea(&Mpz::from_u64(81));
+    let (gcd, bz1, bz2) = Mpz::from_u64(36).extended_gcd(&Mpz::from_u64(81));
     assert_eq!(
         bz1.ref_product(&Mpz::from_u64(36))
             .ref_addition(&bz2.ref_product(&Mpz::from_u64(81))),

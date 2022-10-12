@@ -129,11 +129,11 @@ fn heuristic_test() {
   IS_Prime is possibly deterministic against Carmichael numbers of the form (6k+1)(12k+1)(18k+1) (This is hard to evaluate as none of )
 */
 
-#[ignore]
+//#[ignore]
 #[test]
 fn carmichael_test() {
     let mut failures = 0u64;
-
+/*
     let arnault = Mpz::u_new(vec![
         // Arnault's exceptionally strong Carmichael number that is strong pseudoprime to all n < 307, and approximately 1/3 of all bases
         14125993214864411435,
@@ -166,7 +166,7 @@ fn carmichael_test() {
     }
 
     assert!(failures < 300); // error rate is less than 30%.
-
+*/
     let six = Mpz::from_u64(6);
     let twelve = Mpz::from_u64(12);
     let eighteen = Mpz::from_u64(18);
@@ -175,7 +175,7 @@ fn carmichael_test() {
     let rand_gen = |len: usize| -> (Mpz, Mpz, Mpz) {
         // Generates Carmichael numbers of the form (6k+1)(12k+1)(18k+1)
         loop {
-            let rand = Mpz::rand(len, u64::rng);
+            let rand = Mpz::rand(len*64);
             // rand.set_bit(0);
 
             let lhs = six.ref_product(&rand).ref_addition(&one);
@@ -191,20 +191,24 @@ fn carmichael_test() {
         }
     };
 
-    for _ in 0..10 {
+    for _ in 0..100{
         // 512 bit test
 
-        let (lhs, mid, rhs) = rand_gen(3);
+        let (lhs, mid, rhs) = rand_gen(1);
         let carmichael = lhs.ref_product(&mid).ref_product(&rhs);
-        assert_eq!(carmichael.is_prime(), false)
+        if carmichael.sprp_check(1){
+          failures+=1;
+        }
+        //assert_eq!(carmichael.sprp_check(1), false)
     }
-
+    assert_eq!(0,failures);
+/*
     for _ in 0..10 {
         // 1E+4 Carmichael numbers of the same magnitude as Arnault's
         let (lhs, mid, rhs) = rand_gen(21);
         let carmichael = lhs.ref_product(&mid).ref_product(&rhs);
         assert_eq!(carmichael.is_prime(), false)
-    }
+    }*/
 }
 
 /*
@@ -220,7 +224,7 @@ fn carmichael_test() {
 fn probable_prime() {
     let rand_gen = |len: usize, k: u64| -> (Mpz, Mpz) {
         loop {
-            let rng = Mpz::rand(len, u64::rng);
+            let rng = Mpz::rand(len*64);
             let rk_one = Mpz::from_u64(k).ref_product(&rng).ref_addition(&Mpz::one());
             let k_one = rng.ref_addition(&Mpz::one());
 
@@ -275,7 +279,8 @@ fn confidence_test(){
         }
         
         
-        // Claimed to deterministically pass Apple, Libtom, CommonCrypto & WolfSSL, see original paper for software versions (this may no longer be true);
+        // Claimed to deterministically pass Apple, Libtom, CommonCrypto & WolfSSL, see original paper for software versions
+        // (this may no longer be true);
         // Note that for composites of the form p*(x(p-1)+1)(y(p-1)+1), is_prime has at worst around 1/4 
   let security_flaw =     Mpz::u_new(vec![
   9331929281010904555, 5494805439598348446, 8274855319168077407, 

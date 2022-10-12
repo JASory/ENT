@@ -22,7 +22,7 @@ fn randarith() {
     const WORD_LENGTH: u64 = 11;
 
     let rand_gen = || -> Mpz {
-        let mut z = Mpz::rand((u64::rng() % (WORD_LENGTH - 1)) as usize + 1, u64::rng); // Randomly generates integers in the range -2^704-1;2^704-1
+        let mut z = Mpz::rand(WORD_LENGTH as usize); // Randomly generates integers in the range -2^704-1;2^704-1
         if u64::rng() % 2 == 0 {
             z.neg();
         }
