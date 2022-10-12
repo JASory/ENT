@@ -2,7 +2,7 @@
 
 Elementary Number Theory for Integers in Rust
 
-The fastest provably correct library for primality checking in the interval 0;2^64 + 2^46 that is publicly available. Algebraic definitions of primality and factorization are used, permitting checks like -127.is_prime() to return true and unique factorizations to be considered unsigned.
+The fastest provably correct library for primality checking in the interval 0;2^64 + 2^47 that is publicly available. Algebraic definitions of primality and factorization are used, permitting checks like -127.is_prime() to return true and unique factorizations to be considered unsigned.
 
 
 
@@ -23,11 +23,12 @@ Currently implements these functions
 - Jacobi symbol
 - Smoothness checks
 
- Additionally this library has an implementation of the previous NT functions for arbitrary-precision integers, plus some elementary arithmetic. Multiplication utilizes Karatsuba algorithm, otherwise all other arithmetic can be assumed to be naive. 
+ Additionally this library has an implementation of the previous NT functions for arbitrary-precision integers, plus some elementary arithmetic.
+ Multiplication utilizes Karatsuba algorithm, otherwise all other arithmetic can be assumed to be naive. 
  
  - Addition/subtraction
- - Multiplication
- - Euclidean Division
+ - Multiplication 
+ - Euclidean Division 
  - Conversion to and from radix-10 string
  - Successor function (+1)
  - SIRP-factorials {generalization of factorials}
@@ -35,6 +36,7 @@ Currently implements these functions
  - Sqrt/nth root
  - Exponentiation
  - Logarithms
+ - Probable pseudoprime construction
 
 Usage is fairly simple
  ```rust
