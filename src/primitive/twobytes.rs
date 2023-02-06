@@ -150,12 +150,12 @@ impl NumberTheory for u16 {
         count
     }
 
-    fn prime_gen(k: u32) -> u16 {
+    fn prime_gen(k: u32) -> Option<Self> {
         if k > 16 {
-            panic!("Outside the limit of the datatype")
+            return None;
         }
         if k < 8 {
-            return u8::prime_gen(k) as u16;
+            return u8::prime_gen(k).map(|x| x as u16);
         }
         let form = (1 << (k - 1)) + 1;
         let bitlength = form - 2;
@@ -165,22 +165,22 @@ impl NumberTheory for u16 {
             let p = unsafe { std::mem::transmute::<u64, (u16, u16, u16, u16)>(q) };
 
             if ((p.0 & bitlength) | form).is_prime() {
-                return (p.0 & bitlength) | form;
+                return Some((p.0 & bitlength) | form);
             }
             if ((p.1 & bitlength) | form).is_prime() {
-                return (p.1 & bitlength) | form;
+                return Some((p.1 & bitlength) | form);
             }
             if ((p.2 & bitlength) | form).is_prime() {
-                return (p.2 & bitlength) | form;
+                return Some((p.2 & bitlength) | form);
             }
             if ((p.3 & bitlength) | form).is_prime() {
-                return (p.3 & bitlength) | form;
+                return Some((p.3 & bitlength) | form);
             }
         }
     }
 
     fn factor(&self) -> Vec<Self> {
-    
+      
       if self < &255{
         return (*self as u8).factor().iter().map(|x| *x as u16).collect::<Vec<u16>>()
       }
@@ -213,6 +213,17 @@ impl NumberTheory for u16 {
         }
         factors
     }
+    
+    fn checked_factor(&self) -> Option<Vec<Self>>{
+     
+     if *self < 2{
+       return None
+     }
+     
+     Some(self.factor())
+    
+    }
+
 
     fn sqrt(&self) -> (Self, Self) {
         ((*self as f64).sqrt() as Self, 0)
@@ -233,8 +244,10 @@ impl NumberTheory for u16 {
         (((*self as f64).powf((*n as f64).recip())) as Self, 0)
     }
 
-    fn radical(&self) -> Self {
-        self.factor().iter().step_by(2).product::<u16>()
+
+    
+    fn radical(&self) -> Option<Self> {
+        self.checked_factor().map(|y| y.iter().step_by(2).product::<Self>())
     }
 
     fn k_free(&self, k: &Self) -> bool {
@@ -357,6 +370,26 @@ impl NumberTheory for u16 {
 
         Some(numer * (coef / denom))
     }
+    
+     fn carmichael_totient(&self) -> Option<Self>{
+       if  *self < 255{
+         return (*self as u8).carmichael_totient().map(|x| x as u16)
+       }
+       let fctr = self.factor();
+       let base = fctr.iter().step_by(2).map(|z| *z).collect::<Vec<Self>>();
+       let mut result = 1;
+      for (idx,el) in base.iter().enumerate(){
+        if el == &2 && fctr[1] > 2{
+         let phi = ((el.pow(fctr[2*idx+1] as u32) /el) *(el-1)) /2;
+          result = result.lcm(&phi);
+        }
+       else{
+         let phi =  (el.pow(fctr[2*idx+1] as u32)/el)*(el-1);
+         result = result.lcm(&phi);
+       } 
+      }
+     Some(result)
+    }
 
     fn dedekind_psi(&self, k: &Self) -> Option<Self> {
         let (k2, flag) = k.overflowing_shl(1);
@@ -369,24 +402,33 @@ impl NumberTheory for u16 {
         }
     }
 
-    fn quadratic_residue(&self, n: &Self) -> Self {
+   fn quadratic_residue(&self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*self) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            };
+            return self.wrapping_mul(*self)
         }
-        ((*self as u32 * *self as u32) % *n as u32) as u16
+        ((*self as u32 * *self as u32) % *n as u32) as Self
     }
+    
+    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*self)
+        }
+        Some(((*self as u32 * *self as u32) % *n as u32) as Self)
+    }
+    
 
     fn product_residue(&self, other: &Self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*other) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            };
+            return self.wrapping_mul(*other)
         }
-        ((*self as u32 * *other as u32) % *n as u32) as u16
+        ((*self as u32 * *other as u32) % *n as u32) as Self
+    }
+    
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*other)
+        }
+        Some(((*self as u32 * *other as u32) % *n as u32) as Self)
     }
 
     fn exp_residue(&self, p: &Self, modulus: &Self) -> Self {

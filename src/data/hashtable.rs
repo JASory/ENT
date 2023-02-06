@@ -22,7 +22,7 @@
 
 
   Table          Memory (bytes)         Range                 Hash                        Notes
-  ____________________________________________________________________________________________________________________________________________________________
+  __________________________________________________________________________________________________________________________________________________
 
   BASE_32           400                   0;2^32     (x*2849892383)/21474837        Smallest known hashtable in this interval, all
    										    competitors appear to have 512 bytes
@@ -41,12 +41,12 @@
   										  (Forisek & Jancina's 262K hashtable)
 
 
- (Previously there existed a hashtable for 2^64-2^65 that filtered known pseudoprimes, however that is now defunct due to memory consumption and 
+ (Previously there existed a hashtable for 2^64-2^65 that filtered known pseudoprimes, however that is now defunct due to memory consumption and
   development of an equivalently strong check
  )
 
 
-______________________________________________________________________________________________________________________________________________________________
+____________________________________________________________________________________________________________________________________________________
 
 
 
@@ -54,7 +54,7 @@ ________________________________________________________________________________
 
 
        Author               Memory               Bases         Correct                    Critique
-______________________________________________________________________________________________________________________________________________________________
+___________________________________________________________________________________________________________________________________________________
 
   Forisek & Jacina       65536                   3             Yes                   Consumes a fair amount of memory for requiring 3-base
   										     checks. Flags 617 as composite due to failure to check if
@@ -2261,7 +2261,5 @@ pub (crate) const BASES_35_64 : [u16;32768] = [
 */
    assert_eq!(hashdata(&BASES_35_64[..]), (3,13907,10019156857430916911));
    assert_eq!(hashdata(&BASE_32[..]), (40, 60544, 5120873848049834519));
-   
-   
   // assert_eq!()
  }  

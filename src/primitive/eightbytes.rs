@@ -189,12 +189,12 @@ impl NumberTheory for u64 {
         count
     }
 
-    fn prime_gen(k: u32) -> u64 {
+    fn prime_gen(k: u32) -> Option<Self> {
         if k > 64 {
-            panic!("Outside the limit of the datatype")
+           return None;
         }
         if k < 33 {
-            return u32::prime_gen(k) as u64;
+            return u32::prime_gen(k).map(|x| x as u64);
         }
         let form = (1 << (k - 1)) + 1;
         let bitlength = form - 2;
@@ -202,7 +202,7 @@ impl NumberTheory for u64 {
         loop {
             let p = u64::rng();
             if ((p & bitlength) | form).is_prime() {
-                return (p & bitlength) | form;
+                return Some((p & bitlength) | form);
             }
         }
     }
@@ -258,6 +258,17 @@ impl NumberTheory for u64 {
         }
         factors
     }
+    
+    fn checked_factor(&self) -> Option<Vec<Self>>{
+     
+     if *self < 2{
+       return None
+     }
+     
+     Some(self.factor())
+    
+    }
+
 
     fn sqrt(&self) -> (Self, Self) {
         if *self < 0x100000000 {
@@ -300,8 +311,9 @@ impl NumberTheory for u64 {
         }
     }
 
-    fn radical(&self) -> Self {
-        self.factor().iter().step_by(2).product::<u64>()
+    
+    fn radical(&self) -> Option<Self> {
+        self.checked_factor().map(|y| y.iter().step_by(2).product::<Self>())
     }
 
     fn k_free(&self, k: &Self) -> bool {
@@ -428,6 +440,28 @@ impl NumberTheory for u64 {
 
         Some(numer * (coef / denom))
     }
+    
+    fn carmichael_totient(&self) -> Option<Self>{ 
+    
+       if  *self < 4294967295{
+         return (*self as u32).carmichael_totient().map(|x| x as u64)
+       }
+       
+       let fctr = self.factor();
+       let base = fctr.iter().step_by(2).map(|z| *z).collect::<Vec<Self>>();
+       let mut result = 1;
+      for (idx,el) in base.iter().enumerate(){
+        if el == &2 && fctr[1] > 2{
+         let phi = ((el.pow(fctr[2*idx+1] as u32) /el) *(el-1)) /2;
+          result = result.lcm(&phi);
+        }
+       else{
+         let phi =  (el.pow(fctr[2*idx+1] as u32)/el)*(el-1);
+         result = result.lcm(&phi);
+       } 
+      }
+     Some(result)
+    }
 
     fn dedekind_psi(&self, k: &Self) -> Option<Self> {
         let (k2, flag) = k.overflowing_shl(1);
@@ -440,30 +474,33 @@ impl NumberTheory for u64 {
         }
     }
 
-    fn quadratic_residue(&self, n: &Self) -> Self {
+   fn quadratic_residue(&self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*self) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            }
+            return self.wrapping_mul(*self)
         }
-        if n.is_power_of_two() {
-            return self.wrapping_mul(*self) & (n - 1);
-        }
-        ((*self as u128 * *self as u128) % *n as u128) as u64
+        ((*self as u128 * *self as u128) % *n as u128) as Self
     }
+    
+    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*self)
+        }
+        Some(((*self as u128 * *self as u128) % *n as u128) as Self)
+    }
+    
 
     fn product_residue(&self, other: &Self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*other) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            }
+            return self.wrapping_mul(*other)
         }
-        if n.is_power_of_two() {
-            return self.wrapping_mul(*other) & (n - 1);
+        ((*self as u128 * *other as u128) % *n as u128) as Self
+    }
+    
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*other)
         }
-        ((*self as u128 * *other as u128) % *n as u128) as u64
+        Some(((*self as u128 * *other as u128) % *n as u128) as Self)
     }
 
     fn exp_residue(&self, p: &Self, modulus: &Self) -> Self {

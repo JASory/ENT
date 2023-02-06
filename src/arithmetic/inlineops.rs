@@ -135,9 +135,41 @@ pub(crate) fn divide3by2(ahi: u64, amid: u64, alo: u64, bhi: u64, blo: u64) -> u
 
 #[inline]
 pub(crate) fn carry_shl(carry: u64, x: u64, places: u32, output: &mut u64) -> u64 {
-    *output = (x.overflowing_shl(places).0) | carry;
-    unsafe { core::arch::x86_64::_bextr_u64(x, 64 - places, 64) }
+            *output = (x.overflowing_shl(places).0) | carry;
+              unsafe { core::arch::x86_64::_bextr_u64(x, 64 - places, 64) }
 }
+
+/*
+  New shit function in progress
+#[inline]
+pub(crate) fn carry_shl(carry: u64, x: u64, places: u32, output: &mut u64) -> u64 {
+ #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        if is_x86_feature_detected!("bmi1") {
+            *output = (x.overflowing_shl(places).0) | carry;
+             return unsafe { core::arch::x86_64::_bextr_u64(x, 64 - places, 64) }
+        }
+    }
+    
+}
+*/
+
+/* New shr function 
+#[inline]
+pub(crate) fn carry_shr(carry: u64, x: u64, places: u32, output: &mut u64) -> u64 {
+ #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        if is_x86_feature_detected!("bmi1") {
+            *output = (x >> places) | carry;
+         if places == 0 {
+            return 0;
+         }
+         return  unsafe { core::arch::x86_64::_bextr_u64(x, 0, places) << (64 - places) }
+        }
+    }
+    
+}
+*/
 
 #[inline]
 pub(crate) fn carry_shr(carry: u64, x: u64, places: u32, output: &mut u64) -> u64 {

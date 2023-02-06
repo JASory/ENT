@@ -45,7 +45,7 @@ impl NumberTheory for u128 {
             if !sprp_128(*self, 2) {
                 return false;
             }
-            if !sprp_128(*self, 135){
+            if !sprp_128(*self, 552_491_497){
               return false;
             }
             return true;
@@ -203,12 +203,12 @@ impl NumberTheory for u128 {
         count
     }
 
-    fn prime_gen(k: u32) -> u128 {
+    fn prime_gen(k: u32) -> Option<Self> {
         if k > 128 {
-            panic!("Outside the limit of the datatype")
+            return None
         }
         if k < 65 {
-            return u64::prime_gen(k) as u128;
+            return u64::prime_gen(k).map(|x| x as u128);
         }
         let form = (1 << (k - 1)) + 1;
         let bitlength = form - 2;
@@ -216,7 +216,7 @@ impl NumberTheory for u128 {
         loop {
             let p = u128::rng();
             if ((p & bitlength) | form).is_prime() {
-                return (p & bitlength) | form;
+                return Some((p & bitlength) | form);
             }
         }
     }
@@ -266,6 +266,17 @@ impl NumberTheory for u128 {
             factors
         }
     }
+    
+    fn checked_factor(&self) -> Option<Vec<Self>>{
+     
+     if *self < 2{
+       return None
+     }
+     
+     Some(self.factor())
+    
+    }
+
 
     fn sqrt(&self) -> (Self, Self) {
         if *self < 0x10000000000000000 {
@@ -308,10 +319,11 @@ impl NumberTheory for u128 {
         }
     }
 
-    fn radical(&self) -> Self {
-        self.factor().iter().step_by(2).product::<u128>()
-    }
 
+    fn radical(&self) -> Option<Self> {
+        self.checked_factor().map(|y| y.iter().step_by(2).product::<Self>())
+    }
+    
     fn k_free(&self, k: &Self) -> bool {
         let factors = self.factor();
         for (idx, el) in factors.iter().enumerate() {
@@ -415,6 +427,28 @@ impl NumberTheory for u128 {
         let denominator = factors.iter().step_by(2).product::<u128>();
         (self / denominator) * numerator
     }
+    
+     fn carmichael_totient(&self) -> Option<Self>{
+     
+       if  *self < u64::MAX as u128{
+         return (*self as u64).carmichael_totient().map(|x| x as u128)
+       }
+       
+       let fctr = self.factor();
+       let base = fctr.iter().step_by(2).map(|z| *z).collect::<Vec<Self>>();
+       let mut result = 1;
+      for (idx,el) in base.iter().enumerate(){
+        if el == &2 && fctr[1] > 2{
+         let phi = ((el.pow(fctr[2*idx+1] as u32) /el) *(el-1)) /2;
+          result = result.lcm(&phi);
+        }
+       else{
+         let phi =  (el.pow(fctr[2*idx+1] as u32)/el)*(el-1);
+         result = result.lcm(&phi);
+       } 
+      }
+     Some(result)
+    }
 
     fn jordan_totient(&self, k: &Self) -> Option<Self> {
         if *k > u32::MAX as u128 {
@@ -454,23 +488,27 @@ impl NumberTheory for u128 {
 
     fn quadratic_residue(&self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*self) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            }
+           return self.wrapping_mul(*self)
         }
         if n.is_power_of_two() {
             return self.wrapping_mul(*self) & (n - 1);
         }
-        pow_128(*self, 2, *n) //div_rem1(u256sqr(*self), *n).1
+        pow_128(*self, 2, *n)
+    }
+    
+   fn checked_quadratic_residue(&self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*self)
+        }
+        if n.is_power_of_two() {
+            return Some(self.wrapping_mul(*self) & (n - 1));
+        }
+        Some(pow_128(*self, 2, *n))
     }
 
     fn product_residue(&self, other: &Self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*other) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            }
+            return self.wrapping_mul(*other)
         }
         if n.is_power_of_two() {
             return self.wrapping_mul(*other) & (n - 1);
@@ -481,6 +519,21 @@ impl NumberTheory for u128 {
             .1
             .to_u128()
             .unwrap()
+    }
+    
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self>{
+        if n == &0 {
+          return self.checked_mul(*other)
+        }
+        if n.is_power_of_two() {
+            return Some(self.wrapping_mul(*other) & (n - 1));
+        }
+        Some(Mpz::from_u128(*self)
+            .ref_product(&Mpz::from_u128(*other))
+            .ref_euclidean(&Mpz::from_u128(*n))
+            .1
+            .to_u128()
+            .unwrap())
     }
 
     fn exp_residue(&self, p: &Self, modulus: &Self) -> Self {
@@ -779,6 +832,4 @@ fn jacobi_check_128(x: u128) -> bool {
     x.is_sprp(&witness)
 }
 
-//fn u256euclidean_div(pair: (u128,u128), divisor: u128) -> (u128,u128)
 
-//fn u256rem(pair: (u128,u128), divisor: u128) -> u128

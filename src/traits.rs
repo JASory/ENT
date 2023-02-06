@@ -29,11 +29,11 @@ pub trait NumberTheory {
     determinism, the probability of failure is extremely small and never deterministic (i.e repeating the test will
     almost certainly fail a previous composite that passed).
 
-     N < 2^64 + 2^47 Provably Deterministic, uniquely uses a maximum of 2 strong fermat tests giving it the lowest average complexity 
-    publicly known. Average complexity 0.3  tests, worst-case 2.6 sprp checks (against 2^64-59)
+     N < 2^64 + 2^49 Provably correct deterministic test, uniquely uses a maximum of 2 strong fermat tests giving it the lowest average
+     complexity publicly known. Average complexity 0.3  tests, worst-case 2.6 sprp checks (against 2^64-59)
 
 
-     N > 2^64 + 2^47  Weighted to ensure 2^-64 probability of failure against a random input.Performs a minimum of 3 sprp checks. 
+     N > 2^64 + 2^49  Weighted to ensure 2^-64 probability of failure against a random input.Performs a minimum of 3 sprp checks. 
      Strongest counterexamples are of the form n = p(x(p-1)+1)(y(p-1)+1) where p is prime and gcd(x,y,p) = 1 and n > 2^512, passing at 
      a rate of approximately 25%. Any other equally strong counterexamples are encouraged to be reported. Further strengthening the test 
      should be by calling [sprp_check](struct.Mpz.html#method.sprp_check) afterwards **not** by calling is_prime again. Average complexity 0.18
@@ -87,24 +87,32 @@ pub trait NumberTheory {
     fn nth_prime(&self) -> Option<Self>
     where
         Self: Sized;
-    
-    /*
-    fn checked_prime_gen(k: u32) -> Option<Self>
-    where 
-        Self: Sized;
-    */    
+        
         
     /// Generates an odd positive prime in the interval 2^(k-1);2^k . 
-    fn prime_gen(k: u32) -> Self;
+    fn prime_gen(k: u32) -> Option<Self>
+    where 
+        Self : Sized;
+ 
  
     /// Prime-counting function, exact evaluation for less than 2^64, approximation beyond that. Not currently feasible beyond 10^12
     fn pi(&self) -> Self;
 
-    /// Factorizes into a vector of the form factor, power, factor, power . . . i.e 2,6,5,2 for 2^6 * 5^2  = 1600
+    /// Factorizes into a vector of the form prime factor, power, prime factor, power . . . i.e 2,6,5,2 for 2^6 * 5^2  = 1600
+    
+    /// # Failure 
+    /// x == 0 OR  x == 1
     fn factor(&self) -> Vec<Self>
     where
         Self: Sized;
-        
+    
+    /// Factorizes into a vector of the form prime factor, power, prime factor, power . . . i.e 2,6,5,2 for 2^6 * 5^2  = 1600
+    
+    /// # None 
+    /// x == 0 OR  x == 1
+    fn checked_factor(&self) -> Option<Vec<Self>>
+    where
+        Self: Sized;    
     /// Returns the integer component of at least one solution to the equation x*x = n where x in Z\[i\] (aka the Gaussian integers).
     /// When   x  < 0 the result is (sqrt(x),1) otherwise it is the (sqrt(x),0)
     fn sqrt(&self) -> (Self, Self)
@@ -150,8 +158,12 @@ pub trait NumberTheory {
     where
         Self: Sized;
         
-    // Carmichael function 
-   // fn carmichael(&self) -> Self;
+   ///  Carmichael totient function, also the exponent of the multiplicative group Z/nZ
+   ///  # None
+   ///   x == 0 As the infinite group of Z/0Z has no exponent 
+    fn carmichael_totient(&self) -> Option<Self>
+    where
+        Self: Sized;
     
     /// Counts the number of coprimes from 0 to self
     fn euler_totient(&self) -> Self;
@@ -171,12 +183,29 @@ pub trait NumberTheory {
         Self: Sized;
 
     /// Returns x*y mod n
-
+    /// # Failure
+    /// if x * y > datatype MAX  AND n == 0 
     fn product_residue(&self, other: &Self, n: &Self) -> Self;
-
+    
+    /// Returns x*y mod n
+    /// # None
+    /// if x * y > datatype MAX  AND n == 0 
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self>
+    where
+        Self: Sized;
+     
     /// Returns x*x mod n, similar to product_residue except more optimized squaring.
+    /// # Failure
+    /// if x * x > datatype MAX  AND n == 0
     fn quadratic_residue(&self, n: &Self) -> Self;
 
+    /// Returns x*x mod n, similar to product_residue except more optimized squaring.
+    /// # None
+    /// if x * x > datatype MAX  AND n == 0
+    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self>
+    where
+        Self: Sized;
+        
     /** Returns x^y mod n, generally called mod_pow in other libraries. If y < 0 returns -x^|y| mod n,
     aka the exponentiation of the multiplicative inverse, analogous to the behavior in the Reals.
    */ 
@@ -189,16 +218,28 @@ pub trait NumberTheory {
     fn checked_exp_residue(&self, pow: &Self, n: &Self) -> Option<Self>
     where
         Self: Sized;
-
+        /*
+    /// Returns an x such that x*x = a over Z/nZ    
+    /// # None
+    /// If x does not exist
+    fn sqrt_residue(&self, n: &Self) -> Option<Self>
+    where 
+        Self: Sized;
+        */
     /// Determines of a number is k-free, i.e square-free, cube-free etc. . .
     fn k_free(&self, k: &Self) -> bool;
 /*
     fn partition(&self) -> Option<Self>
     where
         Self: Sized;
-        */
-    /// Returns the product of each prime such that p | n
-    fn radical(&self) -> Self;
+  */
+    
+    /// Returns the product of each prime such that p | n AND p > 0
+    /// # None
+    /// x == 1 OR x == 0
+    fn radical(&self) -> Option<Self>
+    where
+        Self: Sized;
 
     /// Returns the smoothness bound of n, this is the largest prime factor of n. 
     fn smooth(&self) -> Self;
@@ -255,13 +296,14 @@ pub trait NumberTheory {
 
 kronecker symbol
 power residue
-carmichael
 partition
 multiplicative order
 primitive root
 primitive root of unity
 index
 sqrt residue
+divisor list (list of all proper divisors)
+
 
 
     */

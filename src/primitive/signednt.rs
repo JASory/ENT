@@ -90,11 +90,11 @@ impl NumberTheory for $t{
       count
     }
 
-    fn prime_gen(x: u32) -> Self{
+    fn prime_gen(x: u32) -> Option<Self>{
       if x > Self::BITS-1{
-        panic!("Does not fit into datatype")
+        return None
       }
-      <$s>::prime_gen(x) as $t
+      <$s>::prime_gen(x).map(|q| q as $t)
     }
 
        fn factor(&self) -> Vec<Self> {
@@ -103,6 +103,16 @@ impl NumberTheory for $t{
           .map(|x| *x as $t)
           .collect::<Vec<$t>>()
        }
+       
+       fn checked_factor(&self) -> Option<Vec<Self>>{
+     
+          if *self < 2{
+            return None
+          }
+     
+         Some(self.factor())
+       }
+
 
        fn sqrt(&self) -> (Self, Self) {
          if *self < 0 {
@@ -126,8 +136,8 @@ impl NumberTheory for $t{
 
        }
 
-       fn radical(&self) -> Self {
-         (self.abs() as $s).radical() as $t
+       fn radical(&self) -> Option<Self>{
+          (self.abs() as $s).radical().map(|y| y as $t)
        }
 
        fn k_free(&self, k: &Self) -> bool {
@@ -180,6 +190,10 @@ impl NumberTheory for $t{
        fn jordan_totient(&self, k: &Self) -> Option<Self> {
           (self.abs() as $s).jordan_totient(&(k.abs() as $s)).map(|y| y as $t)
        }
+       
+       fn carmichael_totient(&self) -> Option<Self>{
+         (self.abs() as $s).carmichael_totient().map(|y| y as $t)
+       }
 
        fn dedekind_psi(&self, k: &Self) -> Option<Self> {
           (self.abs() as $s).dedekind_psi(&(k.abs() as $s)).map(|y| y as $t)
@@ -187,6 +201,10 @@ impl NumberTheory for $t{
 
        fn quadratic_residue(&self, n: &Self) -> Self {
         (self.abs() as $s).quadratic_residue(&(n.abs() as $s)) as $t
+       }
+       
+       fn checked_quadratic_residue(&self, n: &Self) -> Option<Self>{
+        (self.abs() as $s).checked_quadratic_residue(&(n.abs() as $s)).map(|y| y as $t)
        }
 
        fn product_residue(&self, other: &Self, n: &Self) -> Self {
@@ -201,7 +219,22 @@ impl NumberTheory for $t{
             b += modulo;
         }
         (a as $s).product_residue(&(b as $s), &(modulo as $s)) as $t
-    }
+        }
+    
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+        let mut a = self.clone();
+        let mut b = other.clone();
+        let modulo = n.abs();
+
+        if a < 0 {
+            a += modulo;
+        }
+        if b < 0 {
+            b += modulo;
+        }
+        (a as $s).checked_product_residue(&(b as $s), &(modulo as $s)).map(|y| y as $t)
+        }
+    
 
     fn exp_residue(&self, pow: &Self, n: &Self) -> Self {
         let mut a = self.clone();

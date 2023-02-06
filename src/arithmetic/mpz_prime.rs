@@ -41,7 +41,7 @@ impl Mpz {
     }
 
     #[cfg(not(feature = "parallel"))]
-    /** Performs n random base checks, can be combined with is_prime to strengthen it. As is_prime is equivalent to one random sprp check in the worst case, the function below is 2^-64 in the worst case
+    /** Performs n random base checks, can be combined with is_prime to strengthen it. As is_prime is equivalent to one random sprp check in the worst case, the function below has an error rate of less than 2^-64 in the worst case.
 
      use number_theory::NumberTheory;
      use number_theory::Mpz;
@@ -251,7 +251,8 @@ impl Mpz {
         self.is_sprp(&witty)
     }
 
-/// Returns an integer in the interval 2^(k-1);2^k  that satisfies the Monier-Rabin bound of passing the Artjuhov-Selfridge test in (1/4)
+/// Returns an integer in the interval 2^(k-1);2^k  that satisfies the Monier-Rabin bound of passing the Artjuhov-Selfridge test 
+/// with (1/4) probability
 pub fn psp(k: usize) -> Self{
 
  let corrector = 1 + (k&1)*2 ;
@@ -282,6 +283,29 @@ pub fn psp(k: usize) -> Self{
     return product
   }
   }
+}
+
+/// Deterministic primality test, reliant on GRH
+pub fn miller(&self) -> bool{
+   let sup = (self.ln()*self.ln()*2.0) as u64;
+   
+   match self.to_u128(){
+     Some(x) => {
+       for i in 2..sup{
+         if !x.is_sprp(&(i as u128)){
+           return false
+         }
+       }
+     }
+     None => {
+       for i in 2..sup{
+         if !self.is_sprp(&Mpz::from_u64(i)){
+           return false
+         }
+       }
+     }
+   }
+   return true
 }
     
   

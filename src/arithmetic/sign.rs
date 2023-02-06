@@ -2,7 +2,7 @@
 /// Enum representing the sign
 #[derive(PartialEq, Clone, Debug)]
 pub enum Sign {
-   /// N > 0 representation
+   /// N >= 0 representation
     Positive,
    /// N <  0 representation 
     Negative,

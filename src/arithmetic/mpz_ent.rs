@@ -60,6 +60,10 @@ impl NumberTheory for Mpz {
 
         p.ref_product(&p).ref_euclidean(n).1
     }
+    
+    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self>{
+        Some(self.quadratic_residue(n))
+    }
 
     fn product_residue(&self, other: &Self, n: &Self) -> Self {
         if n == &Mpz::zero() {
@@ -84,6 +88,11 @@ impl NumberTheory for Mpz {
 
         p.ref_product(&q).ref_euclidean(n).1
     }
+    
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self>{
+       Some(self.product_residue(other,n))
+    }
+    
 
     fn exp_residue(&self, y: &Self, n: &Self) -> Self {
         if n == &Mpz::zero() {
@@ -128,6 +137,10 @@ impl NumberTheory for Mpz {
         if self.len() < 3 {
             return self.to_u128().unwrap().is_prime();
         }
+        
+        if !self.trial_div() {
+            return false;
+        }
 
         if self.is_fermat() {
             return false;
@@ -145,10 +158,6 @@ impl NumberTheory for Mpz {
                 }
             }
             None => (),
-        }
-
-        if !self.trial_div() {
-            return false;
         }
 
         if !self.is_sprp(&Mpz::from_u64(2)) {
@@ -176,9 +185,10 @@ impl NumberTheory for Mpz {
         if self.len() < 3 {
             return self.to_u128().unwrap().is_prime();
         }
-        // if !self.trial_div(){
-        //    return false
-        // }
+
+         if !self.trial_div(){
+            return false
+         }
         if self.is_fermat() {
             return false;
         }
@@ -197,9 +207,6 @@ impl NumberTheory for Mpz {
             None => (),
         }
 
-        if !self.trial_div() {
-            return false;
-        }
         // println!("Passed the trial div");
         if self.len() < 9 {
             // if less than 2^6400 then serial
@@ -278,6 +285,7 @@ impl NumberTheory for Mpz {
             }
         }
     }
+    
     //#[cfg(not(feature="parallel"))]
     fn prime_list(&self, sup: &Self) -> Vec<Self> {
         //currently only supports less than, and not inclusive
@@ -350,6 +358,7 @@ impl NumberTheory for Mpz {
         }
     }
 
+
     fn pi(&self) -> Self {
         let mut count = 0u64;
         let mut start = Mpz::zero();
@@ -364,9 +373,13 @@ impl NumberTheory for Mpz {
         }
     }
 
-    fn prime_gen(x: u32) -> Mpz {
+
+    fn prime_gen(x: u32) -> Option<Mpz> {
         if x < 128 {
-            return Mpz::from_u128(u128::prime_gen(x));
+          match u128::prime_gen(x){
+             Some(z) => return Some(Mpz::from_u128(z)),
+             None => return None,
+          }
         }
         let mut form = Mpz::one().shl(x as usize - 1);
         let bitlength = form.ref_subtraction(&Mpz::one());
@@ -376,7 +389,7 @@ impl NumberTheory for Mpz {
             k.mut_and(&bitlength);
             k.mut_or(&form);
             if k.is_prime() {
-                return k;
+                return Some(k);
             }
         }
     } 
@@ -396,6 +409,7 @@ impl NumberTheory for Mpz {
         }
         a
     }
+    
     // Z variant
     fn extended_gcd(&self, other: &Self) -> (Self, Self, Self) {
         let mut gcd = self.clone();
@@ -428,7 +442,7 @@ impl NumberTheory for Mpz {
         }
         
         let cf = self.euclid_gcd(other);
-        self.euclidean_div(&cf).1.ref_product(&other)
+        self.euclidean_div(&cf).0.ref_product(&other)
     }
 
     fn checked_lcm(&self, other: &Self) -> Option<Self> {
@@ -510,6 +524,20 @@ impl NumberTheory for Mpz {
 
         factors
     }
+    
+    fn checked_factor(&self) -> Option<Vec<Self>>{
+     
+     match self.to_u64(){
+       Some(x) => if x < 2 {
+         return None
+       }  
+       None => (),
+     }
+     
+     Some(self.factor())
+    
+    }
+
 
     /// Returns the integer component of sqrt(x)
     fn sqrt(&self) -> (Self, Self) {
@@ -558,14 +586,19 @@ impl NumberTheory for Mpz {
         }
     }
 
-    fn radical(&self) -> Self {
-        let mut rad = Mpz::one();
 
-        for i in self.factor().iter().step_by(2) {
-            rad = rad.ref_product(i)
-        }
-
-        rad
+    
+    fn radical(&self) -> Option<Self>{
+       match self.to_u64(){
+        Some(x) => return x.radical().map(|y| Mpz::from_u64(y)),
+        None => {
+          let mut rad = Mpz::one();
+           for i in self.factor().iter().step_by(2) {
+              rad = rad.ref_product(i)
+           }
+          return Some(rad)
+         },
+       }
     }
 
     fn k_free(&self, x: &Self) -> bool {
@@ -615,12 +648,37 @@ impl NumberTheory for Mpz {
                 .0,
         )
     }
+    
+    fn carmichael_totient(&self) -> Option<Self>{
+       
+       match self.to_u64(){
+         Some(x)=> return x.carmichael_totient().map(|y| Mpz::from_u64(y)),
+         None => (),
+       }
+       
+       let fctr = self.factor();
+       let base = fctr.iter().step_by(2).map(|z| z.clone()).collect::<Vec<Self>>();
+       let power = fctr[1..].iter().step_by(2).map(|k| k.to_u64().unwrap()).collect::<Vec<u64>>();
+       let two = Mpz::from_u64(2);
+       let mut result = Mpz::one();
+      for (idx,el) in base.iter().enumerate(){
+        if el == &two && power[0] > 2{
+         let phi = ((el.pow(power[idx]).ref_euclidean(el).0).ref_product(&el.ref_subtraction(&Mpz::one()))).shr(1);
+          result = result.lcm(&phi);
+        }
+       else{
+         let phi = (el.pow(power[idx]).ref_euclidean(el).0).ref_product(&el.ref_subtraction(&Mpz::one()));
+         result = result.lcm(&phi);
+       } 
+      }
+     Some(result)
+    }
 
     fn dedekind_psi(&self, k: &Self) -> Option<Self> {
         let k2 = k.shl(1);
 
         match self.jordan_totient(&k2) {
-            Some(y) => Some(y.ref_euclidean(&self.jordan_totient(&k).unwrap()).1),
+            Some(y) => Some(y.ref_euclidean(&self.jordan_totient(&k).unwrap()).0),
             None => None,
         }
     }
@@ -628,9 +686,11 @@ impl NumberTheory for Mpz {
     fn legendre(&self, p: &Self) -> i8 {
         let mut p_minus = p.clone();
         p_minus.set_sign(Sign::Positive);
-        sub_slice(&mut p_minus.limbs[..], &[1]);
+        p_minus.inv_successor();
+
         let pow = p_minus.ref_euclidean(&Mpz::from_u64(2)).0;
         let k = self.exp_residue(&pow, p);
+
         if k == Mpz::one() {
             return 1;
         };

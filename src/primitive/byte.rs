@@ -1,5 +1,8 @@
 use crate::data::nt_data::LIOUVILLE_LUT;
 use crate::data::nt_data::EULER_TOTIENT_LUT;
+use crate::data::nt_data::CARMICHAEL_LUT;
+use crate::data::nt_data::DERIVATIVE_LUT;
+
 use crate::data::primes::PRIMELIST;
 use crate::traits::NumberTheory;
 
@@ -148,15 +151,15 @@ impl NumberTheory for u8 {
         count
     }
 
-    fn prime_gen(k: u32) -> Self {
+    fn prime_gen(k: u32) -> Option<Self> {
         if k > 8 {
-            panic!("Outside the limit of the datatype")
+            return None;
         }
         if k < 1 {
-            panic!("No prime exists in that interval")
+            return None;
         }
         if k == 1{
-          return 2
+          return Some(2)
         }
 
         let form = (1 << (k - 1)) + 1;
@@ -167,25 +170,22 @@ impl NumberTheory for u8 {
             let p = q.to_be_bytes();
 
             if ((p[0] & bitlength) | form).is_prime() {
-                return (p[0] & bitlength) | form;
+                return Some((p[0] & bitlength) | form);
             }
             if ((p[1] & bitlength) | form).is_prime() {
-                return (p[1] & bitlength) | form;
+                return Some((p[1] & bitlength) | form);
             }
             if ((p[2] & bitlength) | form).is_prime() {
-                return (p[2] & bitlength) | form;
+                return Some((p[2] & bitlength) | form);
             }
             if ((p[3] & bitlength) | form).is_prime() {
-                return (p[3] & bitlength) | form;
+                return Some((p[3] & bitlength) | form);
             }
         }
     }
 
     fn factor(&self) -> Vec<u8> {
-    
-       if *self < 2{
-        panic!("There is no prime factorization for integers less than 2")
-       }
+
         let mut n = *self;
         let twofactors = n.trailing_zeros();
         n >>= twofactors;
@@ -215,6 +215,16 @@ impl NumberTheory for u8 {
         }
         factors
     }
+    
+    fn checked_factor(&self) -> Option<Vec<Self>>{
+     
+     if *self < 2{
+       return None
+     }
+     
+     Some(self.factor())
+    
+    }
 
     fn sqrt(&self) -> (Self, Self) {
         ((*self as f64).sqrt() as Self, 0)
@@ -235,11 +245,18 @@ impl NumberTheory for u8 {
         (((*self as f64).powf((*n as f64).recip())) as Self, 0)
     }
 
-    fn radical(&self) -> Self {
-        self.factor().iter().step_by(2).product::<u8>()
+    
+    fn radical(&self) -> Option<Self> {
+        self.checked_factor().map(|y| y.iter().step_by(2).product::<Self>())
     }
 
     fn k_free(&self, k: &Self) -> bool {
+        if *self == 0{
+          return true 
+        }
+        if *self == 1{
+         return false
+        }
         let factors = self.factor();
         for (idx, fact) in factors.iter().enumerate() {
             if fact == k && idx > 0 {
@@ -337,6 +354,7 @@ impl NumberTheory for u8 {
     }
 
     fn jordan_totient(&self, k: &Self) -> Option<Self> {
+
         let (coef, flag) = self.overflowing_pow(*k as u32);
 
         if flag {
@@ -356,7 +374,14 @@ impl NumberTheory for u8 {
 
         Some(numer * (coef / denom))
     }
-
+    
+    fn carmichael_totient(&self) -> Option<Self>{
+        if *self == 0{
+         return None
+        }
+        Some(CARMICHAEL_LUT[*self as usize])
+    }    
+   
     fn dedekind_psi(&self, k: &Self) -> Option<Self> {
         let (k2, flag) = k.overflowing_shl(1);
         if flag {
@@ -368,32 +393,37 @@ impl NumberTheory for u8 {
         }
     }
 
-    fn quadratic_residue(&self, n: &Self) -> Self {
+   fn quadratic_residue(&self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*self) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            };
+            return self.wrapping_mul(*self)
         }
-        ((*self as u16 * *self as u16) % *n as u16) as u8
+        ((*self as u16 * *self as u16) % *n as u16) as Self
+    }
+    
+    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*self)
+        }
+        Some(((*self as u16 * *self as u16) % *n as u16) as Self)
     }
 
     fn product_residue(&self, other: &Self, n: &Self) -> Self {
         if n == &0 {
-            match self.checked_mul(*other) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            };
+            return self.wrapping_mul(*other)
         }
-        ((*self as u16 * *other as u16) % *n as u16) as u8
+        ((*self as u16 * *other as u16) % *n as u16) as Self
+    }
+    
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+        if n == &0 {
+            return self.checked_mul(*other)
+        }
+        Some(((*self as u16 * *other as u16) % *n as u16) as Self)
     }
 
-    fn exp_residue(&self, p: &Self, modulus: &Self) -> u8 {
+    fn exp_residue(&self, p: &Self, modulus: &Self) -> Self {
         if modulus == &0 {
-            match self.checked_pow(*p as u32) {
-                Some(x) => return x,
-                None => panic!("Element of residue class exceeds datatype bound"),
-            };
+           return (*self).wrapping_pow(*p as u32)
         }
         if modulus.is_power_of_two() {
             return self.wrapping_pow((*p) as u32) & (*modulus - 1);
@@ -471,16 +501,10 @@ impl NumberTheory for u8 {
     }
     
     fn derivative(&self) -> Option<Self> {
-       let fctr = self.factor();
-       let mut sum : u8 = 0;
-       
-     for i in 0..fctr.len() / 2 {
-        match sum.checked_add(fctr[2 * i + 1] * (*self / fctr[2 * i])){
-          Some(x) => sum = x,
-          None => return None,
-        }
+      if *self > 94{
+         return None
       }
-    Some(sum)
+      Some(DERIVATIVE_LUT[*self as usize])
     }
 
     fn liouville(&self) -> i8 {

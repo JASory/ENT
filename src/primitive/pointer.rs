@@ -42,14 +42,22 @@ impl NumberTheory for usize {
         (*self as u64).pi() as usize
     }
 
-    fn prime_gen(x: u32) -> usize {
-        u64::prime_gen(x) as usize
+    fn prime_gen(x: u32) -> Option<usize> {
+        u64::prime_gen(x).map(|z| z as usize)
     }
 
     fn factor(&self) -> Vec<Self> {
         let list = (*self as u64).factor();
         list.iter().map(|x| *x as usize).collect::<Vec<usize>>()
     }
+
+    fn checked_factor(&self) -> Option<Vec<Self>>{
+      if *self < 2{
+       return None
+      }
+      Some(self.factor())
+    }
+
 
     fn sqrt(&self) -> (Self, Self) {
         ((*self as u64).sqrt().0 as usize, 0)
@@ -87,6 +95,10 @@ impl NumberTheory for usize {
             .jordan_totient(&(*k as u64))
             .map(|y| y as usize)
     }
+    
+    fn carmichael_totient(&self) -> Option<Self>{
+      (*self as u64).carmichael_totient().map(|y| y as usize)
+    }
 
     fn dedekind_psi(&self, k: &Self) -> Option<Self> {
         (*self as u64)
@@ -98,10 +110,18 @@ impl NumberTheory for usize {
         (*self as u64).product_residue(&(*other as u64), &(*n as u64)) as usize
     }
 
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+        (*self as u64).checked_product_residue(&(*other as u64), &(*n as u64)).map(|y| y as usize)
+    }
+    
     fn quadratic_residue(&self, n: &Self) -> Self {
         (*self as u64).quadratic_residue(&(*n as u64)) as usize
     }
 
+    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self> {
+        (*self as u64).checked_quadratic_residue(&(*n as u64)).map(|y| y as usize)
+    }
+    
     fn exp_residue(&self, pow: &Self, n: &Self) -> Self {
         (*self as u64).exp_residue(&(*pow as u64), &(*n as u64)) as usize
     }
@@ -116,8 +136,9 @@ impl NumberTheory for usize {
         (*self as u64).k_free(&(*k as u64))
     }
 
-    fn radical(&self) -> Self {
-        (*self as u64).radical() as usize
+
+    fn radical(&self) -> Option<Self>{
+        (*self as u64).radical().map(|y| y as usize)
     }
 
     fn smooth(&self) -> Self {

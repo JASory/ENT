@@ -498,12 +498,12 @@ impl Mpz {
 
         let mut pow = y.clone();
 
-        if pow == Mpz::zero() {
+        if pow == Mpz::zero(){
             return z;
         }
 
         if pow == Mpz::one() {
-            return self.clone();
+            return base;
         }
 
         while pow.u_cmp(&one) == Ordering::Greater {
@@ -525,8 +525,7 @@ impl Mpz {
                 remove_lead_zeros(&mut pow.limbs);
             }
         }
-        base.u_mul_mod(&z, modulo)
-        //base
+         base.u_mul_mod(&z, modulo)
     }
 
     /// Returns self^x

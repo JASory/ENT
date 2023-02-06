@@ -7,10 +7,10 @@
 
   "DET_MAX" is the upperbound for deterministic tests, all primes below this number receive a maximum of 2 sprp tests,
    a considerable speed up over the minimum of 12 tests that have been previously proven, note that
-   this is approximately  145 trillion higher than the bound of 2^64, (and over 3 trillion more primes) provided by other tests and
+   this is approximately  590 trillion higher than the bound of 2^64, (and over 13 trillion more primes) provided by other tests and
    continously increases due to research by J.A Sory
 */
-pub(crate) const DET_MAX: u128 = 0x10000840000000000; // current bound 2^64 + 2^47 + 2^42
+pub(crate) const DET_MAX: u128 = 0x100021C0000000000; // current bound 2^64 + 2^49 + 2^44 + 2^43 + 2^42
 
 // List of Mersenne prime exponents, shortcuts computation as all Mersenne's not listed below the bound of 57885161 have been proven composite
 pub(crate) const MERSENNE_LIST: [u32; 42] = [
@@ -282,7 +282,7 @@ pub(crate) const PRIMELIST :  [u16;2048] =  [
    17393, 17401, 17417, 17419, 17431, 17443, 17449, 17467, 17471, 17477, 17483, 17489, 17491, 17497, 17509, 17519, 17539, 17551, 17569, 17573,
    17579, 17581, 17597, 17599, 17609, 17623, 17627, 17657, 17659, 17669, 17681, 17683, 17707, 17713, 17729, 17737, 17747, 17749, 17761, 17783, 17789, 17791, 17807, 17827, 17837, 17839, 17851, 17863];
    
-   #[test]
+   #[test]	
  fn check_sum(){
  let mut sum = 0u64;
  
