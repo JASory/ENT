@@ -39,6 +39,7 @@ impl Mpz {
     ```
 
     */
+    
       /// Returns a positive x from a big-endian vector representation 
     pub fn u_new(limbs: Vec<u64>) -> Self {
         Mpz::from_slice(Sign::Positive, &limbs[..])
@@ -104,6 +105,37 @@ impl Mpz {
         match self.len() {
             0 => Some(0u64),
             1 => Some(self.limbs[0]),
+            _ => None,
+        }
+    }
+    
+    /// Convert to 64-bit signed integer
+    pub fn to_i64(&self) -> Option<i64>{
+       let mut flag : i64 = 1;
+       if !self.is_positive(){
+         flag = -1;
+       }
+        match self.len() {
+            0 => Some(0i64),
+            1 => {
+             if self.limbs[0] > i64::MAX as u64{
+              return None
+             }  
+             return Some((self.limbs[0] as i64)*flag)
+            },
+            _ => None,
+        }
+    }
+    /// Converts to 32-bit unsigned integer if it can fit 
+    pub fn to_u32(&self) ->  Option<u32>{
+       match self.len() {
+            0 => Some(0u32),
+            1 => {
+                   if self.limbs[0] > u32::MAX as u64 {
+                      return None
+                   } 
+                   return Some(self.limbs[0] as u32);
+                 }
             _ => None,
         }
     }
@@ -228,6 +260,10 @@ impl Mpz {
     pub fn one() -> Self {
         Mpz::unchecked_new(Sign::Positive, vec![1])
     }
+    /// Returns positive 2
+    pub fn two() -> Self{
+       Mpz::unchecked_new(Sign::Positive, vec![2])
+    }
     /// Additive inverse of n, evaluated in-place 
     pub fn neg(&mut self) {
         self.sign = self.sign.neg();
@@ -242,6 +278,17 @@ impl Mpz {
             return true;
         }
         false
+    }
+    
+    /// Checks if n == 0
+    pub fn is_zero(&self) -> bool {
+       if self.len() == 0{
+         return true
+       }
+       if self.len() == 1 && self.limbs[0] == 1{
+         return true
+       }
+       return false
     }
     /// Checks if n >= 0
     pub fn is_positive(&self) -> bool {
@@ -595,8 +642,8 @@ impl Mpz {
     }
 
     pub(crate) fn rho_mpz(&self) -> Self {
-        let mut x = Mpz::from_u64(2);
-        let mut y = Mpz::from_u64(2);
+        let mut x = Mpz::two();
+        let mut y = Mpz::two();
         let mut d = Mpz::one();
         loop {
             while d == Mpz::one() {

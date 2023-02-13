@@ -8,6 +8,7 @@ use crate::data::primes::PRIMELIST;
 
 use crate::traits::NumberTheory;
 use crate::Mpz;
+use crate::NTResult;
 
 use crate::arithmetic::sliceops::mod_slice;
 use crate::arithmetic::sliceops::sub_slice;
@@ -30,7 +31,7 @@ impl Mpz {
             return true;
         }
 
-        for _ in 0..zeroes - 1 {
+        for _ in 1..zeroes{
             x = x.u_quadratic_residue(self);
 
             if x == p_minus {
@@ -227,7 +228,7 @@ impl Mpz {
         if self.is_prime() {
             let mut safe = self.shl(1);
             let p = safe.clone();
-            let two = Mpz::from_u64(2);
+            let two = Mpz::two();
             safe.successor();
 
             if two.exp_residue(&p, &safe) == Mpz::one() {
@@ -251,12 +252,18 @@ impl Mpz {
         self.is_sprp(&witty)
     }
 
-/// Returns an integer in the interval 2^(k-1);2^k  that satisfies the Monier-Rabin bound of passing the Artjuhov-Selfridge test 
+/// Returns an integer in the interval 2^(k-1);2^k  that can satisfy the Monier-Rabin bound of passing the Artjuhov-Selfridge test 
 /// with (1/4) probability
-pub fn psp(k: usize) -> Self{
+/// 
+pub fn psp(k: usize) -> NTResult<Self>{
 
  let corrector = 1 + (k&1)*2 ;
- 
+ if k < 14{
+   return NTResult::DNE
+ }
+ if k > (1<<32){
+   return NTResult::CompExceeded
+ }
  loop {
   let len = (k-corrector)/2;
   let mut x = Mpz::rand(len);
@@ -280,9 +287,13 @@ pub fn psp(k: usize) -> Self{
    let product = lhs.ref_product(&rhs);
     assert_eq!(product.bit_length(),k as u64);
     
-    return product
+    return NTResult::Eval(product)
   }
   }
+}
+/// A weak fermat test
+pub fn fermat(&self, base: &Self) -> bool{
+  base.exp_residue(&self.ref_subtraction(&Mpz::one()),self).is_one()
 }
 
 /// Deterministic primality test, reliant on GRH

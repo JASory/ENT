@@ -2,6 +2,8 @@
   Traits
 
 */
+use crate::NTResult; 
+use crate::Mpz;
 
 /// Trait for number-theory functions across all integer types
 pub trait NumberTheory {
@@ -81,18 +83,24 @@ pub trait NumberTheory {
     /**
     N-th prime, exact evaluation for less than 2^64, approximation beyond that.  Not currently feasible beyond 10^12
      */
-     /// # None
+     /// # DNE
+     /// n == 0  (there is no zeroth prime)
+     /// # Overflow
      /// Pn > datatype MAX
 
-    fn nth_prime(&self) -> Option<Self>
+    fn nth_prime(&self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
         
         
-    /// Generates an odd positive prime in the interval 2^(k-1);2^k . 
-    fn prime_gen(k: u32) -> Option<Self>
+    /// Generates an odd positive prime in the interval 2^(k-1);2^k 
+    /// # DNE
+    /// x == 0
+    /// # Overflow
+    /// x > datatype length in bits 
+    fn prime_gen(k: u32) -> NTResult<Self>
     where 
-        Self : Sized;
+        Self : Sized + Clone;
  
  
     /// Prime-counting function, exact evaluation for less than 2^64, approximation beyond that. Not currently feasible beyond 10^12
@@ -108,11 +116,13 @@ pub trait NumberTheory {
     
     /// Factorizes into a vector of the form prime factor, power, prime factor, power . . . i.e 2,6,5,2 for 2^6 * 5^2  = 1600
     
-    /// # None 
-    /// x == 0 OR  x == 1
-    fn checked_factor(&self) -> Option<Vec<Self>>
+    /// # InfiniteSet 
+    /// x == 0
+    /// # DNE
+    /// x == 1
+    fn checked_factor(&self) -> NTResult<Vec<Self>>
     where
-        Self: Sized;    
+        Self: Sized + Clone;    
     /// Returns the integer component of at least one solution to the equation x*x = n where x in Z\[i\] (aka the Gaussian integers).
     /// When   x  < 0 the result is (sqrt(x),1) otherwise it is the (sqrt(x),0)
     fn sqrt(&self) -> (Self, Self)
@@ -123,9 +133,15 @@ pub trait NumberTheory {
     fn nth_root(&self, n: &Self) -> (Self, Self)
     where
         Self: Sized;
-
+        
+    /** Returns the representation of x as a base and exponent biasing towards high exponents. E.g 81 -> 3^4 
+        If no higher representation of the number exists then it will return the trivial solution of x^1
+    */
+    fn max_exp(&self) -> (Self, Self)
+    where 
+        Self: Sized;
     /// Binary gcd, Computes the greatest common divisor of two numbers
-    fn euclid_gcd(&self, other: &Self) -> Self;
+    fn gcd(&self, other: &Self) -> Self;
 
     /**
      Extended Euclidean GCD algorithm.
@@ -152,35 +168,39 @@ pub trait NumberTheory {
     fn lcm(&self, other: &Self) -> Self;
 
     /// Computes the least common multiple checking for overflow, and zeroes
-    /// # None
+    /// # Overflow
     /// lcm(x,y) > datatype MAX
-    fn checked_lcm(&self, other: &Self) -> Option<Self>
+    fn checked_lcm(&self, other: &Self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
         
    ///  Carmichael totient function, also the exponent of the multiplicative group Z/nZ
-   ///  # None
+   ///  # Infinite
    ///   x == 0 As the infinite group of Z/0Z has no exponent 
-    fn carmichael_totient(&self) -> Option<Self>
+    fn carmichael_totient(&self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
     
     /// Counts the number of coprimes from 0 to self
     fn euler_totient(&self) -> Self;
 
     /// Counts the Jordan's totient
-    ///# None 
+    ///# Overflow
     /// Jordan_totient(x,k) > datatype MAX
-    fn jordan_totient(&self, k: &Self) -> Option<Self>
+    /// # CompOverflow
+    /// Computation overflowed
+    fn jordan_totient(&self, k: &Self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
 
     ///  Higher-order Dedekind psi
-    /// # None
+    /// # Overflow
     /// dedekind_psi(x,k) > datatype MAX
-    fn dedekind_psi(&self, k: &Self) -> Option<Self>
+    /// # CompOverflow
+    /// Computational overflow
+    fn dedekind_psi(&self, k: &Self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
 
     /// Returns x*y mod n
     /// # Failure
@@ -188,11 +208,11 @@ pub trait NumberTheory {
     fn product_residue(&self, other: &Self, n: &Self) -> Self;
     
     /// Returns x*y mod n
-    /// # None
+    /// # Overflow
     /// if x * y > datatype MAX  AND n == 0 
-    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self>
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
      
     /// Returns x*x mod n, similar to product_residue except more optimized squaring.
     /// # Failure
@@ -200,11 +220,11 @@ pub trait NumberTheory {
     fn quadratic_residue(&self, n: &Self) -> Self;
 
     /// Returns x*x mod n, similar to product_residue except more optimized squaring.
-    /// # None
+    /// # Overflow
     /// if x * x > datatype MAX  AND n == 0
-    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self>
+    fn checked_quadratic_residue(&self, n: &Self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
         
     /** Returns x^y mod n, generally called mod_pow in other libraries. If y < 0 returns -x^|y| mod n,
     aka the exponentiation of the multiplicative inverse, analogous to the behavior in the Reals.
@@ -214,10 +234,14 @@ pub trait NumberTheory {
     
     fn exp_residue(&self, pow: &Self, n: &Self) -> Self;
 
-    /// Exponential residue checked for overflow (in the case of Z/0Z) and lack of an inverse x^-1 in the case of y < 0
-    fn checked_exp_residue(&self, pow: &Self, n: &Self) -> Option<Self>
+    /// Exponential residue x^y mod n
+    /// # DNE 
+    ///  y < 0 AND gcd(x,n) > 1
+    /// # Overflow
+    /// n == 0 AND x^y > datatype MAX 
+    fn checked_exp_residue(&self, pow: &Self, n: &Self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
         /*
     /// Returns an x such that x*x = a over Z/nZ    
     /// # None
@@ -235,14 +259,18 @@ pub trait NumberTheory {
   */
     
     /// Returns the product of each prime such that p | n AND p > 0
-    /// # None
-    /// x == 1 OR x == 0
-    fn radical(&self) -> Option<Self>
+    /// # Infinite
+    ///  x == 0
+    fn radical(&self) -> NTResult<Self>
     where
-        Self: Sized;
+        Self: Sized + Clone;
 
     /// Returns the smoothness bound of n, this is the largest prime factor of n. 
-    fn smooth(&self) -> Self;
+    fn smooth(&self) -> NTResult<Self>
+    where
+        Self: Sized + Clone;
+    
+    //fn checked_smooth(&self)
 
     /// Checks if the smoothness bound is at least b
     fn is_smooth(&self, b: &Self) -> bool;
@@ -253,17 +281,19 @@ pub trait NumberTheory {
     fn legendre(&self, p: &Self) -> i8;
     
     /// Legendre symbol of a,p. 
-    /// # None 
+    /// # Undefined 
     /// P is not an odd prime
-    fn checked_legendre(&self, p: &Self) -> Option<i8>;
+    fn checked_legendre(&self, p: &Self) -> NTResult<i8>;
 
     /// Liouville function
     fn liouville(&self) -> i8;
     
     /// Lagarias derivative
-    fn derivative(&self) -> Option<Self>
+    /// # Overflow
+    /// D(x) > datatype MAX
+    fn derivative(&self) -> NTResult<Self>
     where 
-        Self : Sized;
+        Self : Sized + Clone;
 
     ///Von Mangoldt function, returns the natural logarithm of self if it is a prime-power
     fn mangoldt(&self) -> f64;
@@ -277,11 +307,13 @@ pub trait NumberTheory {
     fn jacobi(&self, p: &Self) -> i8;
 
     /// Jacobi symbol of x,p.
-    /// # None
+    /// # Undefined
     /// P is not an odd, positive integer
-    fn checked_jacobi(&self, p: &Self) -> Option<i8>;
+    fn checked_jacobi(&self, p: &Self) -> NTResult<i8>;
+    
+    /// kronecker symbol
+    fn kronecker(&self, k: &Self) -> i8;
     /*
-
     /// Pi approximation
     fn pi(&self) -> f64;
 
@@ -305,8 +337,40 @@ sqrt residue
 divisor list (list of all proper divisors)
 
 
-
+index, kronecker, partition, mul_order, sqrt
     */
+}
+
+//const trait hello{}
+
+pub(crate) trait Reduction{
+  fn reducible(&self) -> bool;
+}
+
+macro_rules! reducer(
+  ($($t:ty; $s:ty),* $(,)*) => {$(
+  
+  impl Reduction for $t{
+  #[inline]
+  fn reducible(&self) -> bool{
+    if *self < <$s>::MAX as $t{
+      return true
+    }
+    return false
+  } 
+  }
+    )*}
+);
+
+reducer!(u16;u8, i16;i8, u32;u16, i32;i16, u64;u32, i64;i32, u128;u64, i128;i64 );
+
+impl Reduction for Mpz{
+  fn reducible(&self) -> bool{
+    if self.len() < 3{
+      return true
+    }
+    return false
+  }
 }
 
 /*

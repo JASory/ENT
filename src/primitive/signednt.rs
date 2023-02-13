@@ -1,4 +1,6 @@
 use crate::traits::NumberTheory;
+//use crate::traits::Reduction;
+use crate::NTResult;
 
 macro_rules! signednt(
   ($($t:ty; $s:ty),* $(,)*) => {$(
@@ -62,21 +64,27 @@ impl NumberTheory for $t{
         primevector
     }
 
-   fn nth_prime(&self) -> Option<Self> {
-      let mut count : Self = 0;
-      let mut start : Self =  0;
-      loop {
-         start+=1;
-        if start == Self::MAX{
-          return None
+   fn nth_prime(&self) -> NTResult<Self> {
+        let mut count : Self = 0;
+        let mut start : Self = 0;
+        
+        if *self == 0{
+          return NTResult::DNE;
         }
-        if start.is_prime(){
-          count+=1;
+        
+        loop {
+            start += 1;
+
+            if start == Self::MAX {
+                return NTResult::Overflow;
+            }
+            if start.is_prime() {
+                count += 1;
+            }
+            if count == *self {
+                return NTResult::Eval(start);
+            }
         }
-        if count == *self{
-          return Some(start)
-        }
-      }
     }
 
     fn pi(&self) -> Self{
@@ -90,9 +98,9 @@ impl NumberTheory for $t{
       count
     }
 
-    fn prime_gen(x: u32) -> Option<Self>{
+    fn prime_gen(x: u32) -> NTResult<Self>{
       if x > Self::BITS-1{
-        return None
+        return NTResult::Overflow
       }
       <$s>::prime_gen(x).map(|q| q as $t)
     }
@@ -104,14 +112,16 @@ impl NumberTheory for $t{
           .collect::<Vec<$t>>()
        }
        
-       fn checked_factor(&self) -> Option<Vec<Self>>{
-     
-          if *self < 2{
-            return None
-          }
-     
-         Some(self.factor())
+       fn checked_factor(&self) -> NTResult<Vec<Self>>{    
+        if *self == 0{
+          return NTResult::InfiniteSet
+        }
+        if (*self == 1) || (*self == -1){
+          return NTResult::DNE
+        }
+        NTResult::Eval(self.factor())
        }
+
 
 
        fn sqrt(&self) -> (Self, Self) {
@@ -135,8 +145,27 @@ impl NumberTheory for $t{
 
 
        }
+       
+       fn max_exp(&self) -> (Self,Self){
+         if *self == <$t>::MIN{
+           return (-2,self.trailing_zeros() as $t)
+         }
+         if *self < 0{
+         let (base,exp) = (self.abs() as $s).max_exp();
+         if exp&1 == 1{
+           return (-(base as $t), exp as $t)
+         }
+         else{
+           return (*self, 1)
+         }
+         
+         }
+         let (base,exp) = (*self as $s).max_exp();
+         (base as $t, exp as $t)
+         
+       }
 
-       fn radical(&self) -> Option<Self>{
+       fn radical(&self) -> NTResult<Self>{
           (self.abs() as $s).radical().map(|y| y as $t)
        }
 
@@ -144,8 +173,8 @@ impl NumberTheory for $t{
          (self.abs() as $s).k_free(&(k.abs() as $s))
        }
 
-       fn euclid_gcd(&self, other: &Self) -> Self {
-        (self.abs() as $s).euclid_gcd(&(other.abs() as $s)) as $t
+       fn gcd(&self, other: &Self) -> Self {
+        (self.abs() as $s).gcd(&(other.abs() as $s)) as $t
        }
 
 
@@ -179,7 +208,7 @@ impl NumberTheory for $t{
          (self.abs() as $s).lcm(&(other.abs() as $s)) as $t
        }
 
-       fn checked_lcm(&self, other: &Self) -> Option<Self> {
+       fn checked_lcm(&self, other: &Self) -> NTResult<Self> {
         (self.abs() as $s).checked_lcm(&(other.abs() as $s)).map(|y| y as $t)
        }
 
@@ -187,15 +216,15 @@ impl NumberTheory for $t{
          (self.abs() as $s).euler_totient() as $t
        }
 
-       fn jordan_totient(&self, k: &Self) -> Option<Self> {
+       fn jordan_totient(&self, k: &Self) -> NTResult<Self> {
           (self.abs() as $s).jordan_totient(&(k.abs() as $s)).map(|y| y as $t)
        }
        
-       fn carmichael_totient(&self) -> Option<Self>{
+       fn carmichael_totient(&self) -> NTResult<Self>{
          (self.abs() as $s).carmichael_totient().map(|y| y as $t)
        }
 
-       fn dedekind_psi(&self, k: &Self) -> Option<Self> {
+       fn dedekind_psi(&self, k: &Self) -> NTResult<Self> {
           (self.abs() as $s).dedekind_psi(&(k.abs() as $s)).map(|y| y as $t)
        }
 
@@ -203,7 +232,7 @@ impl NumberTheory for $t{
         (self.abs() as $s).quadratic_residue(&(n.abs() as $s)) as $t
        }
        
-       fn checked_quadratic_residue(&self, n: &Self) -> Option<Self>{
+       fn checked_quadratic_residue(&self, n: &Self) -> NTResult<Self>{
         (self.abs() as $s).checked_quadratic_residue(&(n.abs() as $s)).map(|y| y as $t)
        }
 
@@ -221,11 +250,11 @@ impl NumberTheory for $t{
         (a as $s).product_residue(&(b as $s), &(modulo as $s)) as $t
         }
     
-    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> NTResult<Self> {
         let mut a = self.clone();
         let mut b = other.clone();
         let modulo = n.abs();
-
+          
         if a < 0 {
             a += modulo;
         }
@@ -242,16 +271,13 @@ impl NumberTheory for $t{
             a = n.abs() + self
         }
         if pow < &0{
-          let (gcd, inv,_) = (a as $s).extended_gcd(&(n.abs() as $s));
-          if gcd != 1{
-           panic!("No multiplicative inverse");
-          }
+          let inv = (a as $s).extended_gcd(&(n.abs() as $s)).1;
           return inv.exp_residue(&(pow.abs() as $s), &(n.abs() as $s)) as $t
         }
         (a as $s).exp_residue(&(pow.abs() as $s), &(n.abs() as $s)) as $t
     }
 
-    fn checked_exp_residue(&self, pow: &Self, n: &Self) -> Option<Self> {
+    fn checked_exp_residue(&self, pow: &Self, n: &Self) -> NTResult<Self> {
         let mut a = self.clone();
 
         if a < 0 {
@@ -261,7 +287,7 @@ impl NumberTheory for $t{
         if pow < &0{
           let (gcd, inv,_) = (a as $s).extended_gcd(&(n.abs() as $s));
           if gcd != 1{
-           return None
+           return NTResult::DNE
           }
           return inv.checked_exp_residue(&(pow.abs() as $s), &(n.abs() as $s)).map(|y| y as $t) //as $t
         }
@@ -279,18 +305,18 @@ impl NumberTheory for $t{
         return 0;
     }
 
-    fn checked_legendre(&self, p: &Self) -> Option<i8> {
+    fn checked_legendre(&self, p: &Self) -> NTResult<i8> {
         if p.abs() == 2 || p.is_prime() == false {
-            return None;
+            return NTResult::Undefined;
         }
-        Some(self.legendre(&p))
+        NTResult::Eval(self.legendre(&p))
     }
 
     fn liouville(&self) -> i8{
       (*self as $s).liouville()
     }
     
-    fn derivative(&self) -> Option<Self> {
+    fn derivative(&self) -> NTResult<Self> {
       (self.abs() as $s).derivative().map(|y| y as $t)
     }
 
@@ -330,22 +356,42 @@ impl NumberTheory for $t{
             0
         }
     }
+    // FIXME for negative x 
+    fn kronecker(&self, k: &Self) -> i8{
+      if *k < 0 && *self < 0{
+        return (self.abs() as $s).kronecker(&(k.abs() as $s))*-1i8
+      }
+      return (self.abs() as $s).kronecker(&(k.abs() as $s))
+    }
 
-    fn checked_jacobi(&self, k: &Self) -> Option<i8> {
+    fn checked_jacobi(&self, k: &Self) -> NTResult<i8> {
         if k > &0 && *k % 2 == 1 {
-            return Some(self.jacobi(k));
+            return NTResult::Eval(self.jacobi(k));
         }
-        return None;
+        return NTResult::Undefined;
     }
 
-    fn smooth(&self) -> Self {
+ fn smooth(&self) -> NTResult<Self> {
+       if *self == 0{
+         return NTResult::Infinite
+       }
+       if *self == 1{
+        return NTResult::DNE
+       }
         let k = self.factor();
-        k[k.len() - 2]
+        NTResult::Eval(k[k.len() - 2])
     }
+    
+    
 
     fn is_smooth(&self, b: &Self) -> bool {
-        self.smooth() <= b.abs()
-    }
+     match self.smooth(){
+      NTResult::Infinite => false,
+      NTResult::Eval(x) => x <= *b, 
+      _=> false,
+     }
+   }
+
   }
     )*}
 );

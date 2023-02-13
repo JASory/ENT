@@ -1,4 +1,5 @@
 use crate::traits::NumberTheory;
+use crate::result::NTResult;
 
 impl NumberTheory for usize {
     fn rng() -> Self {
@@ -34,15 +35,20 @@ impl NumberTheory for usize {
         list.iter().map(|x| *x as usize).collect::<Vec<usize>>()
     }
 
-    fn nth_prime(&self) -> Option<Self> {
+    fn nth_prime(&self) -> NTResult<Self> {
         (*self as u64).nth_prime().map(|y| y as usize)
+    }
+    
+    fn max_exp(&self) -> (Self, Self){
+      let (base,exp) = (*self as u64).max_exp();
+      (base as usize, exp as usize)
     }
 
     fn pi(&self) -> Self {
         (*self as u64).pi() as usize
     }
 
-    fn prime_gen(x: u32) -> Option<usize> {
+    fn prime_gen(x: u32) -> NTResult<usize> {
         u64::prime_gen(x).map(|z| z as usize)
     }
 
@@ -51,11 +57,15 @@ impl NumberTheory for usize {
         list.iter().map(|x| *x as usize).collect::<Vec<usize>>()
     }
 
-    fn checked_factor(&self) -> Option<Vec<Self>>{
-      if *self < 2{
-       return None
-      }
-      Some(self.factor())
+   fn checked_factor(&self) -> NTResult<Vec<Self>>{    
+     if *self == 0{
+       return NTResult::InfiniteSet
+     }
+     if *self == 1{
+       return NTResult::DNE
+     }
+     
+     NTResult::Eval(self.factor())
     }
 
 
@@ -67,8 +77,8 @@ impl NumberTheory for usize {
         ((*self as u64).nth_root(&(*n as u64)).0 as usize, 0)
     }
 
-    fn euclid_gcd(&self, other: &Self) -> Self {
-        (*self as u64).euclid_gcd(&(*other as u64)) as usize
+    fn gcd(&self, other: &Self) -> Self {
+        (*self as u64).gcd(&(*other as u64)) as usize
     }
 
     fn extended_gcd(&self, other: &Self) -> (Self, Self, Self) {
@@ -80,7 +90,7 @@ impl NumberTheory for usize {
         (*self as u64).lcm(&(*other as u64)) as usize
     }
 
-    fn checked_lcm(&self, other: &Self) -> Option<Self> {
+    fn checked_lcm(&self, other: &Self) -> NTResult<Self> {
         (*self as u64)
             .checked_lcm(&(*other as u64))
             .map(|y| y as usize)
@@ -90,17 +100,17 @@ impl NumberTheory for usize {
         (*self as u64).euler_totient() as usize
     }
 
-    fn jordan_totient(&self, k: &Self) -> Option<Self> {
+    fn jordan_totient(&self, k: &Self) -> NTResult<Self> {
         (*self as u64)
             .jordan_totient(&(*k as u64))
             .map(|y| y as usize)
     }
     
-    fn carmichael_totient(&self) -> Option<Self>{
+    fn carmichael_totient(&self) -> NTResult<Self>{
       (*self as u64).carmichael_totient().map(|y| y as usize)
     }
 
-    fn dedekind_psi(&self, k: &Self) -> Option<Self> {
+    fn dedekind_psi(&self, k: &Self) -> NTResult<Self> {
         (*self as u64)
             .dedekind_psi(&(*k as u64))
             .map(|y| y as usize)
@@ -110,7 +120,7 @@ impl NumberTheory for usize {
         (*self as u64).product_residue(&(*other as u64), &(*n as u64)) as usize
     }
 
-    fn checked_product_residue(&self, other: &Self, n: &Self) -> Option<Self> {
+    fn checked_product_residue(&self, other: &Self, n: &Self) -> NTResult<Self> {
         (*self as u64).checked_product_residue(&(*other as u64), &(*n as u64)).map(|y| y as usize)
     }
     
@@ -118,7 +128,7 @@ impl NumberTheory for usize {
         (*self as u64).quadratic_residue(&(*n as u64)) as usize
     }
 
-    fn checked_quadratic_residue(&self, n: &Self) -> Option<Self> {
+    fn checked_quadratic_residue(&self, n: &Self) -> NTResult<Self> {
         (*self as u64).checked_quadratic_residue(&(*n as u64)).map(|y| y as usize)
     }
     
@@ -126,7 +136,7 @@ impl NumberTheory for usize {
         (*self as u64).exp_residue(&(*pow as u64), &(*n as u64)) as usize
     }
 
-    fn checked_exp_residue(&self, pow: &Self, n: &Self) -> Option<Self> {
+    fn checked_exp_residue(&self, pow: &Self, n: &Self) -> NTResult<Self> {
         (*self as u64)
             .checked_exp_residue(&(*pow as u64), &(*n as u64))
             .map(|y| y as usize)
@@ -137,12 +147,12 @@ impl NumberTheory for usize {
     }
 
 
-    fn radical(&self) -> Option<Self>{
+    fn radical(&self) -> NTResult<Self>{
         (*self as u64).radical().map(|y| y as usize)
     }
 
-    fn smooth(&self) -> Self {
-        (*self as u64).smooth() as usize
+    fn smooth(&self) -> NTResult<Self> {
+        (*self as u64).smooth().map(|y| y as usize)
     }
 
     fn is_smooth(&self, b: &Self) -> bool {
@@ -157,11 +167,11 @@ impl NumberTheory for usize {
         (*self as u64).liouville()
     }
     
-    fn derivative(&self) -> Option<Self>{
+    fn derivative(&self) -> NTResult<Self>{
        (*self as u64).derivative().map(|y| y as usize)
     }
 
-    fn checked_legendre(&self, p: &Self) -> Option<i8> {
+    fn checked_legendre(&self, p: &Self) -> NTResult<i8> {
         (*self as u64).checked_legendre(&(*p as u64))
     }
 
@@ -178,8 +188,12 @@ impl NumberTheory for usize {
         (*self as u64).jacobi(&(*p as u64))
     }
 
-    fn checked_jacobi(&self, p: &Self) -> Option<i8> {
+    fn checked_jacobi(&self, p: &Self) -> NTResult<i8> {
         (*self as u64).checked_jacobi(&(*p as u64))
+    }
+    
+    fn kronecker(&self, k: &Self) -> i8 {
+        (*self as u64).kronecker(&(*k as u64))
     }
 
 }

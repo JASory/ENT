@@ -15,7 +15,8 @@ of many functions which are more useful in handling the 0 and 1 cases even if th
 
 Features
 
-* 14 distinct non-trivial number-theorectic functions implemented by all builtin integer types and arbitrary precision integer
+* 14 distinct non-trivial number-theorectic functions implemented by all builtin integer types and arbitrary precision integer (some of the
+  provided functions are indeed relatively trivial or strongly derived from others and are so not counted here)
 * Z/nZ Ring arithmetic, frequently using optimized algorithms.
 * Extremely fast and rigourously proven primality checking for integers under 2^64+2^49.
 
@@ -26,11 +27,23 @@ Considerations for usage
  * Functions that have a "checked" counterpart perform zero correctness checks, **do not panic**, and rely on the user guaranteeing that the input
   will be valid.This is for efficiency purposes, if you cannot guarantee that an input will meet the guidelines then use the "checked" variant. 
   The inputs that result in incorrect  outputs are given under "Failure" for each applicable function. This conditions directly correspond to the
-  conditions that result in None output in the checked variant. 
+  conditions that result in  output in the checked variant. 
+ * As Number-theory functions are often more generalized than most other libraries this means than some common functionality may be hidden in
+  related  functions. Examples include multiplicative inverses being provided by x.exp_residue(-1,n) or more directly by the finite ring variant
+  of euclid_gcd, and detecting prime powers using the mangoldt function or max_root
+  
  * Number-theory is not a cryptography library and is not a substitute for rigourous securely implemented algorithms that consider adversarial
   attacks, branch-prediction etc. However, number-theory may exceed other "cryptographic" libraries in speed and correctness, possibly even under
   adversarial conditions. Additionally it provides functions that may be useful in testing cryptography libraries like 
   [psp](struct.Mpz.html#method.psp) which provides a composite with optimal probability of passing a Miller-Rabin test. 
+  
+Rules of Checked Functions and NTResult
+
+ * Checked functions exist to provide a function that returns a correct evaluation for any input at the cost of greater overhead 
+ * Checked Functions always return an NTResult enum
+ * Checked and non-checked variants of functions exist if the function: 1. Cannot correctly evaluate all inputs 2. Has low complexity
+ * "Non-checked" functions, without a checked counterpart, may return an NTResult if they: 1. Can error  2. Have high complexity. The majority of
+   these functions rely on costly factorization and evaluate as infinite for 0. 
 
 Why you might not want to use this
 
@@ -68,7 +81,9 @@ pub(crate) mod montgomery;
 mod primitive;
 mod sieve;
 mod traits;
+mod result;
 
 pub use crate::arithmetic::mpz::Mpz;
 pub use crate::arithmetic::sign::Sign;
 pub use crate::traits::NumberTheory;
+pub use crate::result::NTResult;
