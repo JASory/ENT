@@ -303,7 +303,6 @@ impl NumberTheory for u128 {
             let s = est;
             let t = s + *self / s;
             est = t >> 1;
-            println!("s: {} est: {} t: {}", s,est,t);
             if est >= s {
             if *self - (est*est) == 0{
               return (est,0)
