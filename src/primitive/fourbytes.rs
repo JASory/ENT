@@ -558,12 +558,16 @@ impl NumberTheory for u32 {
         return (*self as u16).mobius()
       }
       let fctr = self.factor();
+      if fctr.len() == 1{ // if only one factor then return -1
+         return -1
+      }
       for i in 0..fctr.len()/2{
-        if fctr[2*i+1] == 2{
+        if fctr[2*i+1]  > 1{
          return 0
         }
       }
-      if fctr.len()&1 == 1{
+      let fctrsum = fctr[1..].iter().step_by(2).sum::<Self>();
+      if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
       return 1

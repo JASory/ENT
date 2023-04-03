@@ -356,12 +356,53 @@ impl NumberTheory for $t{
             0
         }
     }
-    // FIXME for negative x 
+   // Kronecker symbol 
     fn kronecker(&self, k: &Self) -> i8{
+    let mut multiplier = 1;
+    
+    if *k < 0 && *self < 0{
+      multiplier = -1;
+    }
+    
+    let x = self.clone();
+     if *k == 0{
+      if x == 1{
+         return 1
+      }
+     return 0
+    }
+   if *k == 1{
+      return 1
+   }
+   let fctr = k.factor();
+   let mut start = 0;
+   let mut res = 1;
+   
+   if fctr[0] ==  2{
+     start = 1;
+     if x&1 == 0{
+     res = 0;
+     }
+     else if x % 8 == 1 || x % 8 == 7{
+      res=1
+     }
+     else{
+       res = (-1i8).pow(fctr[1] as u32)
+     }
+   }
+   if fctr[0] == 2 && fctr.len() == 2{
+     return res*multiplier
+   }
+   for i in start..fctr.len()/2{
+     res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1] as u32);
+   }
+   return res*multiplier
+    /*
       if *k < 0 && *self < 0{
         return (self.abs() as $s).kronecker(&(k.abs() as $s))*-1i8
       }
       return (self.abs() as $s).kronecker(&(k.abs() as $s))
+      */
     }
 
     fn checked_jacobi(&self, k: &Self) -> NTResult<i8> {

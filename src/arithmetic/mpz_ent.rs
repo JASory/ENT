@@ -226,7 +226,6 @@ impl NumberTheory for Mpz {
             None => (),
         }
 
-        // println!("Passed the trial div");
         if self.len() < 9 {
             // if less than 2^6400 then serial
             if !self.is_sprp(&Mpz::two()) {
@@ -244,7 +243,6 @@ impl NumberTheory for Mpz {
             return true;
         } else {
             // parallelize the checks which roughly cost the same
-            // println!("Parallel");
             let a = self.clone();
             let b = self.clone();
             let c = self.clone();
@@ -407,20 +405,18 @@ impl NumberTheory for Mpz {
         }
         
         let mut form = Mpz::one().shl(x as usize-1);
-       // println!("{} form",form.to_string());
+
         let bitlength = form.ref_subtraction(&Mpz::one());
-        //println!("{} bitlength", bitlength.to_string());
+
         form.successor();
-        //println!("{} form final", form.to_string());
+
         loop {
             let mut k = Mpz::rand(x as usize+1);
-          //  println!("START {}",k.to_string());
-            //println!("{}",k.bit_length());
+        
             k.mut_and(&bitlength);
-           // println!("AND {}",k.to_string());
+
             k.mut_or(&form);
             assert_eq!(k.bit_length() as u32,x);
-            //println!("OR {}",k.to_string());
             if k.is_prime() {
                 return NTResult::Eval(k);
             }
@@ -516,7 +512,7 @@ impl NumberTheory for Mpz {
         }
         n.normalize();
 
-        if n == Mpz::one() {
+        if n.is_one(){
             return factors;
         }
 
@@ -527,7 +523,7 @@ impl NumberTheory for Mpz {
             return factors;
         }
 
-        'outer: while n != Mpz::one() {
+        'outer: while !n.is_one() {
             let k = n.rho_mpz();
 
             factors.push(k.clone());
@@ -536,7 +532,7 @@ impl NumberTheory for Mpz {
             'secinner: loop {
                 let (inner_quo, inner_rem) = n.ref_euclidean(&k);
 
-                if inner_rem != Mpz::zero() {
+                if !inner_rem.is_zero() {
                     break 'secinner;
                 }
                 n = inner_quo;
@@ -625,7 +621,6 @@ impl NumberTheory for Mpz {
    fn max_exp(&self) -> (Self,Self){
      let mut expo = Mpz::from_u64(self.bit_length());
      let mut flag = true;
-     println!("{}",expo.to_string());
      if  self.is_positive(){
        flag = false
      }
@@ -638,7 +633,6 @@ impl NumberTheory for Mpz {
            return(base,expo)
          }
          expo.inv_successor();
-         println!("{}", expo.to_string());
          if expo.to_u64().unwrap() == 1{
          let mut val = self.clone();
           if flag {
@@ -835,12 +829,16 @@ impl NumberTheory for Mpz {
           None => (),
         }
       let fctr = self.factor();
+      if fctr.len() == 1{ // if only one factor then return -1
+         return -1
+      }
       for i in 0..fctr.len()/2{
-        if fctr[2*i+1] == Mpz::two(){
+        if fctr[2*i+1].to_u64().unwrap()  > 1{
          return 0
         }
       }
-      if fctr.len()&1 == 1{
+      let fctrsum = fctr[1..].iter().step_by(2).map(|k| k.to_u64().unwrap()).sum::<u64>();
+      if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
       return 1
@@ -884,6 +882,11 @@ impl NumberTheory for Mpz {
     }
     
      fn kronecker(&self, k: &Self) -> i8{
+     let mut multiplier = 1;
+    
+    if !k.is_positive() && !self.is_positive(){
+      multiplier = -1;
+    }
      let x = self.clone();
      if k.is_zero(){
       if x.is_one(){
@@ -911,12 +914,12 @@ impl NumberTheory for Mpz {
      }
    }
    if fctr[0] == two && fctr.len() == 2{
-     return res
+     return res*multiplier
    }
    for i in start..fctr.len()/2{
      res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1].to_u64().unwrap() as u32);
    }
-   return res
+   return res*multiplier
 }
     
     fn smooth(&self) -> NTResult<Self> {

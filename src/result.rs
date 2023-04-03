@@ -30,6 +30,70 @@ impl<T: Sized + Clone + Default> NTResult<T>{
     _=> panic!("value does not exist")
     }
  }
+ 
+ /// Returns the result or panics with the selected message
+ pub fn expect(&self, signal: &str)-> T{
+    match self{
+     NTResult::Eval(x) => x.clone(),
+     _=> panic!("{}",signal)
+    }
+ }
+ /// Returns the result or the selected default
+ pub fn unwrap_or(&self, res: T) -> T{
+    match self{
+     NTResult::Eval(x) => x.clone(),
+     _=> res,
+    }
+ }
+ /// Checks if the result is infinitely large
+ pub fn is_infinite(&self) -> bool{
+   match self{
+   NTResult::Infinite => true,
+     _=> false,
+   }
+ }
+ /// Checks if the result is an infinite set
+ pub fn is_infiniteset(&self) -> bool{
+   match self{
+   NTResult::InfiniteSet => true,
+     _=> false,
+   }
+ }
+ /// Checks if the solution to the function exists
+ pub fn is_dne(&self) -> bool{
+   match self{
+   NTResult::DNE => true,
+     _=> false,
+   }
+ }
+ /// Checks if the result exceeds the datatype max
+ pub fn is_overflow(&self) -> bool{
+   match self{
+   NTResult::Overflow => true,
+     _=> false,
+   }
+ }
+ /// Checks if there was an overflow during computation
+ pub fn is_comp_overflow(&self) -> bool{
+   match self{
+   NTResult::CompOverflow => true,
+     _=> false,
+   }
+ }
+ /// Checks if the Computation exceeded 
+ pub fn is_comp_exceeded(&self) -> bool{
+   match self{
+   NTResult::CompExceeded => true,
+     _=> false,
+   }
+ }
+  /// Checks if the result is undefined 
+ pub fn is_undefined(&self) -> bool{
+   match self{
+   NTResult::Undefined => true,
+     _=> false,
+   }
+ }
  /** Converts from Option to NTResult. None values are converted to the selected NTResult variant
  ```
   use number_theory::NumberTheory;

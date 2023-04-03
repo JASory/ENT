@@ -1,0 +1,25 @@
+mr psp 8,9,13
+
+mr 6 
+
+jordan totient 10;20  
+
+dedekind psi 7,3
+
+prime_gen distribution for 64n bit primes 
+
+Carmichael function 
+zero -> Infinite
+one -> 1
+
+implement mul-inverse for exp_residue in mpz
+implement checks for 1 & 0 in all exp_residue functions
+
+zero errors{
+pi
+radical
+loiuville
+mobius}
+
+
+

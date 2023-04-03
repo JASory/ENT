@@ -64,6 +64,30 @@ pub(crate) fn to_string(sign: Sign, digits: Vec<u64>) -> String {
     last
 }
 
+pub(crate) fn to_hex_string(sign: Sign, digits: Vec<u64>) -> String{
+               if digits.is_empty() {
+                  return "".to_string();
+               }
+               let mut k = "0x".to_string();
+               
+               if sign == Sign::Negative{
+                 k = "-".to_string() + &k;
+               }
+               
+               if digits.len()==1{
+                 let p = format!("{:0X}",digits[0]);//digits[0].to_string();
+                 if sign == Sign::Negative {
+                   return "-".to_owned() + &p;
+                 } else {
+                  return p;
+                 }
+               }
+               for i in digits.iter().rev(){
+                 k = k.to_owned() + &format!("{:0X}",i);// &word_char(*i);
+               }
+              return k
+}
+
 pub(crate) fn from_string(string: &str) -> Option<Vec<u64>> {
     let b = string.bytes().all(|c| c.is_ascii_digit());
 

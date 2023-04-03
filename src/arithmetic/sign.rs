@@ -37,4 +37,19 @@ impl Sign {
             Sign::Positive
         }
     }
+    
+ ///   To boolean for FFI
+    pub fn ffi(&self) -> bool{
+       match self{
+         Sign::Negative => true,
+         Sign::Positive => false,
+       }
+    }
+  /// From boolean FFI  
+    pub fn from_ffi(x: bool) -> Self{
+    match x{
+        true => Sign::Negative,
+        false => Sign::Positive,
+        }
+    }
 }

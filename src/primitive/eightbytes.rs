@@ -626,16 +626,20 @@ impl NumberTheory for u64 {
     }
     
     fn mobius(&self) -> i8 {
-      if self.reducible(){
+     if self.reducible(){
         return (*self as u32).mobius()
       }
       let fctr = self.factor();
+      if fctr.len() == 1{ // if only one factor then return -1
+         return -1
+      }
       for i in 0..fctr.len()/2{
-        if fctr[2*i+1] == 2{
+        if fctr[2*i+1]  > 1{
          return 0
         }
       }
-      if fctr.len()&1 == 1{
+      let fctrsum = fctr[1..].iter().step_by(2).sum::<Self>();
+      if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
       return 1
@@ -711,6 +715,8 @@ impl NumberTheory for u64 {
    }
    return res
 }
+
+
 
   fn smooth(&self) -> NTResult<Self> {
        if *self == 0{

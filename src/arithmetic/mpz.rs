@@ -179,6 +179,10 @@ impl Mpz {
     pub fn to_string(&self) -> String {
         to_string(self.sign.clone(), self.limbs.clone())
     }
+    /// Converts n to a radix-16 string in linear time
+    pub fn to_hex_string(&self) -> String{
+       to_hex_string(self.sign.clone(),self.limbs.clone())
+    }
     // temporary placeholder function to flip negative zeros
     pub(crate) fn fix_zero(&mut self) {
         if self.len() == 0 {

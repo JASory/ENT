@@ -65,7 +65,7 @@ pub trait NumberTheory {
        followed by the factors of n-1. For instance  269u64.prime_proof may return (true, [238, 2,67]).
         Verification requires checking that 238.exp_residue(269-1, 269) == 1
         and 238.exp_residue((269-1)/2, 269) != 1 and 238.exp_residue((269-1)/67, 269) != 1. See prime_proof in examples to see how.
-        Unable to construct a proof for the Carmichael numbers.
+        Unable to construct a proof for Carmichael numbers. 
     */
     fn prime_proof(&self) -> (bool, Vec<Self>)
     where

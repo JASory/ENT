@@ -15,10 +15,8 @@ impl Mpz {
         for (i, j) in self.limbs.iter_mut().zip(other.limbs.iter()) {
             *i &= j
         }
-        //println!("{} other len", self.len());
         self.limbs.truncate(other.len());
         self.normalize();
-        //println!("{} self len", self.len());
     }
 
    /// Performs bitwise OR operation between x and y storing the result in x
