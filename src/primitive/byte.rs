@@ -133,7 +133,7 @@ impl NumberTheory for u8 {
         if *self > 54{
          return NTResult::Overflow
         }
-        NTResult::Eval(PRIMELIST[*self as usize] as u8)
+        NTResult::Eval(PRIMELIST[*self as usize-1usize] as u8)
     }
 
     fn pi(&self) -> Self {
