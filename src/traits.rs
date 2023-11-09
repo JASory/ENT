@@ -6,7 +6,7 @@ use crate::NTResult;
 use crate::Mpz;
 
 /// Trait for number-theory functions across all integer types
-pub trait NumberTheory {
+pub trait NumberTheory : Default + Clone + Sized + std::fmt::Display{
     ///Random number generation, generally high-quality
     fn rng() -> Self;
 

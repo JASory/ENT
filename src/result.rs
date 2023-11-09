@@ -168,3 +168,19 @@ impl<T: Sized + Clone + Default> NTResult<T>{
  }
 
 }
+
+impl<T: Clone + Default + Sized + std::fmt::Display > std::fmt::Display for NTResult<T>{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+       match self{
+       
+       NTResult::Eval(x) => write!(f,"{}",x),
+       NTResult::Overflow => write!(f,"Overflow"),
+       NTResult::DNE => write!(f,"DNE"),
+       NTResult::Infinite => write!(f,"Infinite"),
+       NTResult::InfiniteSet => write!(f,"Infinite solutions"),
+       NTResult::CompExceeded => write!(f,"Exceeded computation bound"),
+       NTResult::CompOverflow => write!(f,"Overflowed during computation"),
+       NTResult::Undefined => write!(f,"Undefined"),
+       }
+    }
+   } 

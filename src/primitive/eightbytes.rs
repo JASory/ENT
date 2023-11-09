@@ -6,26 +6,6 @@ use crate::arithmetic::inlineops::*;
 use crate::montgomery::*;
 
 use crate::data::primes::PRIMELIST;
-use crate::data::primes::PRIME_INV_128;
-use crate::data::primes::PRIME_INV_64;
-
-use crate::data::hashtable::BASE_33;
-use crate::data::hashtable::BASE_34;
-use crate::data::hashtable::BASE_35;
-
-use crate::data::hashtable::BASES_35_64;
-
-
-fn detect_pseudo(x: u64) -> bool {
-    for i in 2..16 {
-        let sq = (x - 1) / i;
-        let k = (sq as f64).sqrt() as u64;
-        if ((k * k + k).wrapping_mul(i)).wrapping_add( k + 1) == x {
-            return true;
-        }
-    }
-    return false;
-}
 
 impl NumberTheory for u64 {
     fn rng() -> Self {
@@ -52,50 +32,8 @@ impl NumberTheory for u64 {
             // tree down to u32 if it fits
             return (*self as u32).is_prime();
         }
-        if *self & 1 == 0 {
-            return false;
-        }
-
-        if self < &0x5A2553748E42E8 {
-            for i in PRIME_INV_64[..256].iter() {
-                if ((*self).wrapping_mul(*i)) < *self {
-                    return false;
-                }
-            }
-        }
-
-        if self > &0x5A2553748E42E8 {
-            for i in PRIME_INV_128[..128].iter() {
-                if ((*self as u128).wrapping_mul(*i)) < *self as u128 {
-                    return false;
-                }
-            }
-        }
-
-        // TODO : Reduce to a single hashtable if possible to minimize if branching
-
-        if *self < 8589934592 {
-            return self.is_sprp(&(BASE_33[((*self ^ 0x100000000) >> 24) as usize] as u64));
-        }
-
-        if *self < 17179869184 {
-            return self.is_sprp(&(BASE_34[((*self ^ 0x200000000) >> 24) as usize] as u64));
-        }
-        if *self < 34359738368 {
-            return self.is_sprp(&(BASE_35[((*self ^ 0x400000000) >> 25) as usize] as u64));
-        }
-
-        if !self.is_sprp(&2) {
-            return false;
-        }
-
-        if detect_pseudo(*self) {
-            return false;
-        }
-
-        let idx = ((*self as u32).wrapping_mul(3301793688) >> 17) as usize;
-
-        self.is_sprp(&(BASES_35_64[idx] as u64))
+        machine_prime::is_prime(*self)
+        
     }
 
     fn prime_proof(&self) -> (bool, Vec<Self>) {

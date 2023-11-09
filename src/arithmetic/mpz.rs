@@ -14,6 +14,14 @@ pub struct Mpz {
     pub(crate) limbs: Vec<u64>,
 }
 
+impl std::fmt::Display for Mpz{
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    
+       let out = to_string(self.sign.clone(), self.limbs.clone());
+       write!(f,"{}",out)
+  }
+}
+
 impl Mpz {
     /**
 

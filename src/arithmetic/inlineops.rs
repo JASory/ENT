@@ -67,12 +67,36 @@ pub(crate) const fn fuse(hi: u64, lo: u64) -> u128 {
 
 #[inline]
 pub(crate) fn adc(carry: u8, x: u64, y: u64, output: &mut u64) -> u8 {
-    unsafe { core::arch::x86_64::_addcarry_u64(carry, x, y, output) }
+      #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+      {
+       unsafe { core::arch::x86_64::_addcarry_u64(carry, x, y, output) }
+      }
+     #[cfg(not(any(target_arch = "x86",target_arch="x86_64")))]
+     {
+       let x128 = x as u128;
+       let y128 = y as u128;
+       let sum = x128+y128 + carry as u128;
+       *output = sum as u64;
+       (sum>>64) as u8
+     }
 }
 
 #[inline]
 pub(crate) fn sbb(carry: u8, x: u64, y: u64, output: &mut u64) -> u8 {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+      {
     unsafe { core::arch::x86_64::_subborrow_u64(carry, x, y, output) }
+      }
+        #[cfg(not(any(target_arch = "x86",target_arch="x86_64")))]
+        {
+          let (flag,interim) = x.overflowing_sub(carry);
+          let (flag2,res) = interim.overflowing_sub(y);
+          *output = res;
+          if flag || flag2{
+             return 1u8 
+          }
+          0u8
+        }
 }
 
 #[inline]
