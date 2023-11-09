@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "number-theory"
-version = "0.0.22"
+version = "0.0.24"
 authors = ["J.A Sory jasory@rust-cas.org"]
 description = "Fast primality, factorization and elementary number theory for integer types"
 homepage = "https://rust-cas.org"
@@ -46,6 +46,6 @@ name = "titanic_prime"
 harness = false
 
 [dependencies]
-
+machine-prime = "1.2.2"
 [features]
 parallel = []
