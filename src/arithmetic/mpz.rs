@@ -88,7 +88,7 @@ impl Mpz {
 /// Return x from i128
     pub fn from_i128(x: i128) -> Self {
         if x < 0i128 {
-            let (x_lo, x_hi) = split(x.abs() as u128);
+            let (x_lo, x_hi) = split(x.unsigned_abs());
             if x_hi == 0 {
                 return Mpz::unchecked_new(Sign::Negative, vec![x_lo]);
             }
@@ -104,7 +104,7 @@ impl Mpz {
 /// Return x from i64
     pub fn from_i64(x: i64) -> Self {
         if x < 0i64 {
-            return Mpz::unchecked_new(Sign::Negative, vec![x.abs() as u64]);
+            return Mpz::unchecked_new(Sign::Negative, vec![x.unsigned_abs()]);
         }
         Mpz::unchecked_new(Sign::Positive, vec![x as u64])
     }
@@ -129,7 +129,7 @@ impl Mpz {
              if self.limbs[0] > i64::MAX as u64{
               return None
              }  
-             return Some((self.limbs[0] as i64)*flag)
+             Some((self.limbs[0] as i64)*flag)
             },
             _ => None,
         }
@@ -142,7 +142,7 @@ impl Mpz {
                    if self.limbs[0] > u32::MAX as u64 {
                       return None
                    } 
-                   return Some(self.limbs[0] as u32);
+                   Some(self.limbs[0] as u32)
                  }
             _ => None,
         }
@@ -169,7 +169,7 @@ impl Mpz {
       }
       let mut interim = (0..k).map(|_| u64::rng()).collect::<Vec<u64>>();
       
-      interim[k-1] =  interim[k-1]&((1<<(len%64))-1);
+      interim[k-1] &= (1<<(len%64))-1;
       let mut result = Mpz::unchecked_new(Sign::Positive, interim);
       result.set_bit(len-1);
       result
@@ -300,7 +300,7 @@ impl Mpz {
        if self.len() == 1 && self.limbs[0] == 1{
          return true
        }
-       return false
+       false
     }
     /// Checks if n >= 0
     pub fn is_positive(&self) -> bool {
@@ -323,7 +323,7 @@ impl Mpz {
                 return false;
             }
         }
-        return true;
+        true
     }
 
     pub(crate) fn is_fermat(&self) -> bool {
@@ -714,7 +714,7 @@ impl Mpz {
     
     let (gcd, bezout_1, bezout_2) = self.extended_gcd(other);
     
-    return (gcd, bezout_1.residue(other), bezout_2.residue(self))
+    (gcd, bezout_1.residue(other), bezout_2.residue(self))
      
     }
 

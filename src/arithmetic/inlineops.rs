@@ -89,8 +89,8 @@ pub(crate) fn sbb(carry: u8, x: u64, y: u64, output: &mut u64) -> u8 {
       }
         #[cfg(not(any(target_arch = "x86",target_arch="x86_64")))]
         {
-          let (flag,interim) = x.overflowing_sub(carry);
-          let (flag2,res) = interim.overflowing_sub(y);
+          let (interim,flag) = x.overflowing_sub(carry.into());
+          let (res,flag2) = interim.overflowing_sub(y);
           *output = res;
           if flag || flag2{
              return 1u8 

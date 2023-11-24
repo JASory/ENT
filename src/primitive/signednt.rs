@@ -50,9 +50,7 @@ impl NumberTheory for $t{
         let inf = std::cmp::min(*self, *sup);
         let mut hi = std::cmp::max(*self,*sup);
 
-        if hi < Self::MAX{
-           hi+=1;
-        }
+        hi = hi.saturating_add(1);
 
         let mut primevector = vec![];
 

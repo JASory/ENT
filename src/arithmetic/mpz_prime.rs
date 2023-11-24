@@ -178,7 +178,7 @@ impl Mpz {
         }
 
         // insert a sieve that optimizes to eliminate composites (this does not appear to be any more efficient than using the hardcoded primes )
-        return true;
+        true
     }
     
    pub(crate) fn _trial_list(&self, primes: &[u64]) -> bool{
@@ -187,7 +187,7 @@ impl Mpz {
          return false
         }
       }
-      return true
+      true
     }
 
     // weighted strong fermat bases starting from 2^128
@@ -267,10 +267,8 @@ pub fn psp(k: usize) -> NTResult<Self>{
  loop {
   let len = (k-corrector)/2;
   let mut x = Mpz::rand(len);
-  if corrector == 3{
-   if !x.check_bit(len-2){
+  if corrector == 3 && !x.check_bit(len-2){
     x.flip_bit(len-2);
-   }
   }
   if corrector == 1{
     if x.check_bit(len-2){
@@ -316,7 +314,7 @@ pub fn miller(&self) -> bool{
        }
      }
    }
-   return true
+   true
 }
     
   
@@ -354,5 +352,5 @@ pub(crate) fn detect_pseudo_mpz(x: &Mpz) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
