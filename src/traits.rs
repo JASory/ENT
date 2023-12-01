@@ -369,7 +369,7 @@ impl Reduction for Mpz{
     if self.len() < 3{
       return true
     }
-    return false
+    false
   }
 }
 

@@ -1,17 +1,12 @@
 
 /// Enum representing the sign
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 pub enum Sign {
    /// N >= 0 representation
+    #[default]
     Positive,
    /// N <  0 representation 
     Negative,
-}
-
-impl Default for Sign {
-    fn default() -> Self {
-        Sign::Positive
-    }
 }
 
 impl Sign {

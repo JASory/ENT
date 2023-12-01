@@ -72,13 +72,13 @@ impl NumberTheory for u32 {
             let mut witness = Self::rng() % (self - 2) + 2;
 
             'witness: loop {
-                if witness.gcd(&self) == 1 {
+                if witness.gcd(self) == 1 {
                     break 'witness;
                 }
                 witness += 1;
             }
 
-            if witness.exp_residue(&x_minus, &self) != 1 {
+            if witness.exp_residue(&x_minus, self) != 1 {
                 // If any witness says it's composite then it is
                 certificate[0] = witness;
 
@@ -254,7 +254,7 @@ impl NumberTheory for u32 {
            return(base,p)
          }
       }
-     return (*self,1)
+     (*self,1)
     }    
     
     fn radical(&self) -> NTResult<Self> {
@@ -522,7 +522,7 @@ impl NumberTheory for u32 {
         if primeomega & 1 == 0 {
             return 1;
         }
-        return -1;
+        -1
     }
     
     fn derivative(&self) -> NTResult<Self> {
@@ -550,7 +550,7 @@ impl NumberTheory for u32 {
        if base.is_prime(){
          return (base as f64).ln()
        }
-        return 0f64
+        0f64
     }
     
     fn mobius(&self) -> i8 {
@@ -570,7 +570,7 @@ impl NumberTheory for u32 {
       if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
-      return 1
+      1
     }
 
     fn jacobi(&self, k: &Self) -> i8 {
@@ -609,7 +609,7 @@ impl NumberTheory for u32 {
     }
     
   fn kronecker(&self, k: &Self) -> i8{
-     let x = self.clone();
+     let x = *self;
      if *k == 0{
       if x == 1{
          return 1
@@ -641,7 +641,7 @@ impl NumberTheory for u32 {
    for i in start..fctr.len()/2{
      res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1]);
    }
-   return res
+   res
 }
 
  fn smooth(&self) -> NTResult<Self> {

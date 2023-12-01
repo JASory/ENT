@@ -82,13 +82,13 @@ impl NumberTheory for u8 {
             let mut witness = Self::rng() % (self - 2) + 2;
 
             'witness: loop {
-                if witness.gcd(&self) == 1 {
+                if witness.gcd(self) == 1 {
                     break 'witness;
                 }
                 witness += 1;
             }
 
-            if witness.exp_residue(&x_minus, &self) != 1 {
+            if witness.exp_residue(&x_minus, self) != 1 {
                 // If any witness says it's composite then it is
                 certificate[0] = witness;
 
@@ -112,9 +112,7 @@ impl NumberTheory for u8 {
         let inf = std::cmp::min(*self, *sup);
         let mut hi = std::cmp::max(*self, *sup);
 
-        if hi < u8::MAX {
-            hi += 1;
-        }
+        hi = hi.saturating_add(1);
 
         let mut primevector = vec![];
 
@@ -253,7 +251,7 @@ impl NumberTheory for u8 {
            return(base,p)
          }
       }
-     return (*self,1)
+     (*self,1)
     }    
 
     
@@ -386,7 +384,7 @@ impl NumberTheory for u8 {
         for i in self.factor().iter().step_by(2) {
             let pow = i.pow(*k as u32);
 
-            denom = denom * pow;
+            denom *= pow;
 
             numer *= pow - 1;
         }
@@ -530,7 +528,7 @@ impl NumberTheory for u8 {
         if (LIOUVILLE_LUT[(*self / 64) as usize] >> (*self % 64)) & 1 == 1 {
             return -1;
         }
-        return 1;
+        1
     }
     
     fn mobius(&self) -> i8 {
@@ -553,7 +551,7 @@ impl NumberTheory for u8 {
       if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
-      return 1
+      1
     }
 
     fn mangoldt(&self) -> f64 {
@@ -561,7 +559,7 @@ impl NumberTheory for u8 {
        if base.is_prime(){
          return (base as f64).ln()
        }
-        return 0f64
+       0f64
     }
 
     fn jacobi(&self, k: &Self) -> i8 {
@@ -593,7 +591,7 @@ impl NumberTheory for u8 {
     }
     
     fn kronecker(&self, k: &Self) -> i8{
-     let x = self.clone();
+     let x = *self;
      if *k == 0{
       if x == 1{
          return 1
@@ -625,7 +623,7 @@ impl NumberTheory for u8 {
    for i in start..fctr.len()/2{
      res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1] as u32);
    }
-   return res
+   res
 }
 
     fn checked_jacobi(&self, k: &Self) -> NTResult<i8> {

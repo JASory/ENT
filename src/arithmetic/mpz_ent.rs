@@ -20,11 +20,11 @@ impl NumberTheory for Mpz {
       if ring.clone() == Mpz::zero(){
         return self.clone()
       } 
-      let rem = self.ref_euclidean(&ring).1;
+      let rem = self.ref_euclidean(ring).1;
       if !self.is_positive(){
         return self.ref_subtraction(&rem)
       }
-      return rem
+      rem
     }
 
     fn euclidean_div(&self, other: &Self) -> (Self, Self) {
@@ -401,7 +401,7 @@ impl NumberTheory for Mpz {
 
     fn prime_gen(x: u32) -> NTResult<Mpz> {
         if x < 128 {
-         return u128::prime_gen(x).map(|y| Mpz::from_u128(y))  
+         return u128::prime_gen(x).map(Mpz::from_u128)  
         }
         
         let mut form = Mpz::one().shl(x as usize-1);
@@ -470,7 +470,7 @@ impl NumberTheory for Mpz {
         }
         
         let cf = self.gcd(other);
-        self.euclidean_div(&cf).0.ref_product(&other)
+        self.euclidean_div(&cf).0.ref_product(other)
     }
 
     fn checked_lcm(&self, other: &Self) -> NTResult<Self> {
@@ -647,13 +647,13 @@ impl NumberTheory for Mpz {
     
     fn radical(&self) -> NTResult<Self>{
        match self.to_u64(){
-        Some(x) => return x.radical().map(|y| Mpz::from_u64(y)),
+        Some(x) => x.radical().map(Mpz::from_u64),
         None => {
           let mut rad = Mpz::one();
            for i in self.factor().iter().step_by(2) {
               rad = rad.ref_product(i)
            }
-          return NTResult::Eval(rad)
+          NTResult::Eval(rad)
          },
        }
     }
@@ -718,7 +718,7 @@ impl NumberTheory for Mpz {
     fn carmichael_totient(&self) -> NTResult<Self>{
        
        match self.to_u128(){
-         Some(x)=> return x.carmichael_totient().map(|y| Mpz::from_u128(y)),
+         Some(x)=> return x.carmichael_totient().map(Mpz::from_u128),
          None => (),
        }
        
@@ -791,7 +791,7 @@ impl NumberTheory for Mpz {
         if primeomega.is_even() {
             return 1;
         }
-        return -1;
+        -1
     }
     
     fn derivative(&self) -> NTResult<Self> {
@@ -819,7 +819,7 @@ impl NumberTheory for Mpz {
         if fctr.len() != 2 {
             return 0f64;
         }
-        return fctr[0].ln();
+        fctr[0].ln()
     }
     
     
@@ -841,7 +841,7 @@ impl NumberTheory for Mpz {
       if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
-      return 1
+      1
     }
 
     fn jacobi(&self, k: &Self) -> i8 {
@@ -919,7 +919,7 @@ impl NumberTheory for Mpz {
    for i in start..fctr.len()/2{
      res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1].to_u64().unwrap() as u32);
    }
-   return res*multiplier
+   res*multiplier
 }
     
     fn smooth(&self) -> NTResult<Self> {
@@ -941,7 +941,7 @@ impl NumberTheory for Mpz {
       NTResult::Eval(x) => {
       let mut k = b.clone();
         k.set_sign(Sign::Positive);
-        return matches!(x.u_cmp(&k), Ordering::Less)
+        matches!(x.u_cmp(&k), Ordering::Less)
       }, 
       _=> false,
      }

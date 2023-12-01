@@ -109,9 +109,7 @@ impl NumberTheory for u16 {
         let inf = std::cmp::min(*self, *sup);
         let mut hi = std::cmp::max(*self, *sup);
 
-        if hi < u16::MAX {
-            hi += 1;
-        }
+        hi = hi.saturating_add(1);
 
         let mut primevector = vec![];
 
@@ -269,7 +267,7 @@ impl NumberTheory for u16 {
            return(base,p)
          }
       }
-     return (*self,1)
+     (*self,1)
     }    
     
     fn radical(&self) -> NTResult<Self> {
@@ -558,7 +556,7 @@ impl NumberTheory for u16 {
         if (LIOUVILLE_LUT[(*self / 64) as usize] >> (*self % 64)) & 1 == 1 {
             return -1;
         }
-        return 1;
+        1
     }
     
     fn derivative(&self) -> NTResult<Self> {
@@ -585,7 +583,7 @@ impl NumberTheory for u16 {
        if base.is_prime(){
          return (base as f64).ln()
        }
-        return 0f64
+        0f64
     }
     
     fn mobius(&self) -> i8 {
@@ -605,7 +603,7 @@ impl NumberTheory for u16 {
       if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
-      return 1
+      1
     }
 
     fn jacobi(&self, k: &Self) -> i8 {
@@ -644,7 +642,7 @@ impl NumberTheory for u16 {
     }
     
      fn kronecker(&self, k: &Self) -> i8{
-     let x = self.clone();
+     let x = *self;
      if *k == 0{
       if x == 1{
          return 1
@@ -676,7 +674,7 @@ impl NumberTheory for u16 {
    for i in start..fctr.len()/2{
      res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1] as u32);
    }
-   return res
+   res
 }
 
     fn smooth(&self) -> NTResult<Self> {

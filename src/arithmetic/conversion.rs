@@ -85,7 +85,7 @@ pub(crate) fn to_hex_string(sign: Sign, digits: Vec<u64>) -> String{
                for i in digits.iter().rev(){
                  k = k.to_owned() + &format!("{:0X}",i);// &word_char(*i);
                }
-              return k
+              k
 }
 
 pub(crate) fn from_string(string: &str) -> Option<Vec<u64>> {

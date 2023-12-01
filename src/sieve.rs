@@ -44,7 +44,6 @@ pub(crate) fn prime_list_32(inf: usize, sup: usize, data: &[u32]) -> Vec<u32> {
     let ndxlmt = (sup - 3) / 2 + 1;
     let lo: isize = (inf as isize - 3) / 2 + 1; // lo = -1;
     let temp = (lo..ndxlmt as isize)
-        .into_iter()
         .filter_map(move |i| {
             if i < 0 {
                 Some(2)
