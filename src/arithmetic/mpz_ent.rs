@@ -1,5 +1,6 @@
-use crate::traits::NumberTheory;
+use crate::ntrait::NumberTheory;
 use crate::result::NTResult;
+use crate::structs::{Certificate,Factorization};
 
 use crate::arithmetic::inlineops::*;
 use crate::arithmetic::mpz::Mpz;
@@ -12,23 +13,31 @@ use crate::data::primes::MERSENNE_LIST;
 use std::cmp::Ordering;
 
 impl NumberTheory for Mpz {
+
+    fn is_unit(&self) -> bool{
+	if self.limbs.len() == 1 && self.limbs[0] == 1{
+	  return true;
+	}
+	false
+    }
+
     fn rng() -> Self {
-        Mpz::unchecked_new(Sign::Positive, vec![rng_64(), rng_64(), rng_64(), rng_64()])
+        Mpz::unchecked_new(Sign::Positive, vec![u64::rng(), u64::rng(), u64::rng(), u64::rng()])
     }
     
-    fn residue(&self, ring: &Self) -> Self{
+    fn residue(&self, ring: Self) -> Self{
       if ring.clone() == Mpz::zero(){
         return self.clone()
       } 
-      let rem = self.ref_euclidean(ring).1;
+      let rem = self.ref_euclidean(&ring).1;
       if !self.is_positive(){
         return self.ref_subtraction(&rem)
       }
       rem
     }
 
-    fn euclidean_div(&self, other: &Self) -> (Self, Self) {
-        let (mut quo, mut rem) = self.ref_euclidean(other);
+    fn euclidean_div(&self, other: Self) -> (Self, Self) {
+        let (mut quo, mut rem) = self.ref_euclidean(&other);
         if self.sign == Sign::Negative && other.sign == Sign::Negative {
             rem.neg();
         } else if self.sign == Sign::Positive && other.sign == Sign::Negative {
@@ -43,15 +52,15 @@ impl NumberTheory for Mpz {
         (quo, rem)
     }
 
-    fn quadratic_residue(&self, n: &Self) -> Self {
-        if n == &Mpz::zero() {
+    fn quadratic_residue(&self, n: Self) -> Self {
+        if n == Mpz::zero() {
             return Mpz::zero();
         }
 
         let mut p = self.clone();
 
         if p.sign == Sign::Negative {
-            p = p.add_modinv(n);
+            p = p.add_modinv(&n);
         }
 
         if n.is_power_of_two() {
@@ -59,15 +68,15 @@ impl NumberTheory for Mpz {
             return p.ref_product(&p).and(&reducer);
         }
 
-        p.ref_product(&p).ref_euclidean(n).1
+        p.ref_product(&p).ref_euclidean(&n).1
     }
     
-    fn checked_quadratic_residue(&self, n: &Self) -> NTResult<Self>{
+    fn checked_quadratic_residue(&self, n: Self) -> NTResult<Self>{
         NTResult::Eval(self.quadratic_residue(n))
     }
 
-    fn product_residue(&self, other: &Self, n: &Self) -> Self {
-        if n == &Mpz::zero() {
+    fn product_residue(&self, other: Self, n: Self) -> Self {
+        if n == Mpz::zero() {
             return Mpz::zero();
         }
 
@@ -75,11 +84,11 @@ impl NumberTheory for Mpz {
         let mut q = other.clone();
 
         if p.sign == Sign::Negative {
-            p = p.add_modinv(n);
+            p = p.add_modinv(&n);
         }
 
         if q.sign == Sign::Negative {
-            q = q.add_modinv(n)
+            q = q.add_modinv(&n)
         }
 
         if n.is_power_of_two() {
@@ -87,71 +96,78 @@ impl NumberTheory for Mpz {
             return p.ref_product(&q).and(&reducer);
         }
 
-        p.ref_product(&q).ref_euclidean(n).1
+        p.ref_product(&q).ref_euclidean(&n).1
     }
     
-    fn checked_product_residue(&self, other: &Self, n: &Self) -> NTResult<Self>{
+    fn checked_product_residue(&self, other: Self, n: Self) -> NTResult<Self>{
        NTResult::Eval(self.product_residue(other,n))
     }
     
 
-    fn exp_residue(&self, y: &Self, n: &Self) -> Self {
-        if n == &Mpz::zero() {
-            match y.to_i64() {
-                Some(x) => {
+    fn exp_residue(&self, y: Self, n: Self) -> Self {
+        if n == Mpz::zero() {
+            match i64::try_from(y) {
+                Ok(x) => {
                   if x < 1i64{
                     panic!("No inverse")
                   }
                 return self.pow(x as u64)
                 },
-                None => panic!("Incomputably large result"),
+                Err(_) => panic!("Incomputably large result"),
             }
         }
 
         let mut p = self.clone();
 
         if p.sign == Sign::Negative {
-            p = p.add_modinv(n);
+            p = p.add_modinv(&n);
         }
 
-        p.u_mod_pow(y, n)
+        p.u_mod_pow(&y, &n)
     }
 
-    fn checked_exp_residue(&self, y: &Self, n: &Self) -> NTResult<Self> {
-        if n == &Mpz::zero() {
-            match y.to_i64() {
-                Some(x) => {
+    fn checked_exp_residue(&self, y: Self, n: Self) -> NTResult<Self> {
+        if n == Mpz::zero() {
+            match i64::try_from(y) {
+                Ok(x) => {
                   if x < 0i64{
                     return NTResult::DNE
                   }
                    return NTResult::Eval(self.pow(x as u64)) 
                 },
-                None => return NTResult::CompExceeded,
+                Err(_) => return NTResult::CompExceeded,
             }
         }
 
         let mut p = self.clone();
 
         if p.sign == Sign::Negative {
-            p = p.add_modinv(n);
+            p = p.add_modinv(&n);
         }
         
         if !y.is_positive(){
-           let (gcd,base,_) = self.eea(n);
-           if !gcd.is_one(){
+           let (gcd,base,_) = self.eea(n.clone());
+           if !gcd.is_unit(){
              return NTResult::DNE
            }
-           return NTResult::Eval(base.u_mod_pow(y,n))
+           return NTResult::Eval(base.u_mod_pow(&y,&n))
         }
 
-        NTResult::Eval(p.u_mod_pow(y, n))
+        NTResult::Eval(p.u_mod_pow(&y, &n))
     }
 
-    fn is_sprp(&self, base: &Self) -> bool {
+    fn fermat(&self, base: Self) -> bool{
+       base.exp_residue(self.ref_subtraction(&Mpz::one()),self.clone()).is_unit()
+    }
+    
+    
+    fn strong_fermat(&self, base: Self) -> bool {
+       if self.is_even(){
+          return self.fermat(&base);
+       }
         self.sprp(base.clone())
     }
 
-    #[cfg(not(feature = "parallel"))]
     fn is_prime(&self) -> bool {
         if self.len() < 3 {
             return self.to_u128().unwrap().is_prime();
@@ -178,8 +194,10 @@ impl NumberTheory for Mpz {
             }
             None => (),
         }
-
-        if !self.is_sprp(&Mpz::two()) {
+        
+    #[cfg(not(feature = "parallel"))]
+      {
+        if !self.sprp(Mpz::two()) {
             return false;
         }
 
@@ -194,41 +212,13 @@ impl NumberTheory for Mpz {
         if !self.weighted_sprp() {
             return false;
         }
-        // if !self.lucas(){
-         //return false
-      // }
         true
-    }
-    #[cfg(feature = "parallel")]
-    fn is_prime(&self) -> bool {
-        if self.len() < 3 {
-            return self.to_u128().unwrap().is_prime();
-        }
-
-         if !self.trial_div(){
-            return false
-         }
-        if self.is_fermat() {
-            return false;
-        }
-
-        match self.is_mersenne() {
-            Some(x) => {
-                if MERSENNE_LIST.contains(&(x as u32)) {
-                    return true;
-                } else if x < 57885161 {
-                    return false;
-                } else {
-                    // actually incomputable but left for correctness
-                    return self.llt(x);
-                }
-            }
-            None => (),
-        }
-
-        if self.len() < 9 {
+       } // end single-thread block
+           #[cfg(feature = "parallel")]
+       {
+               if self.len() < 9 {
             // if less than 2^6400 then serial
-            if !self.is_sprp(&Mpz::two()) {
+            if !self.sprp(&Mpz::two()) {
                 return false;
             }
             if !self.form_check() {
@@ -256,61 +246,60 @@ impl NumberTheory for Mpz {
 
             return two.join().unwrap() & jacobi.join().unwrap() & rand.join().unwrap();
         }
+       } // end parallel block
     }
+    
+    fn prime_proof(&self) -> Certificate<Self>{
+    
+        if self.clone() == Mpz::two() {
+            return Certificate::new(self.clone(),Mpz::from(3u64),vec![]);
+        }
 
-    fn prime_proof(&self) -> (bool, Vec<Self>) {
         let x_minus = self.ref_subtraction(&Mpz::one());
-        let fctrs = x_minus
-            .factor()
-            .iter()
-            .step_by(2)
-            .map(|y| y.clone())
+        let fctrs = x_minus.factor().unwrap()
+            .factor_iter().map(|x| x_minus.ref_euclidean(x).0)
             .collect::<Vec<Self>>();
-        let mut certificate = vec![Mpz::two()];
-
-        certificate.extend_from_slice(&fctrs[..]);
-
+         //println!("{:?}",fctrs);
         loop {
-            // loops until it has either been shown to be prime or composite
+            // loops until we get a 
 
-            let mut witness = Mpz::rand((self.bit_length()-1) as usize);
-      
-
+            let mut witness = Mpz::from(u64::rng()).ref_euclidean(&self.ref_subtraction(&Mpz::two())).1.ref_addition(&Mpz::two());
+            //println!("witness {}",witness);    
             'witness: loop {
-                if witness.gcd(self) == Mpz::one() {
-                    break 'witness;
-                }
+
+                if witness.coprime(self.clone()) {
+                	  break 'witness;
+		        }
+    
                 witness.successor();
             }
+              
+	   if !self.strong_fermat(witness.clone()){
+		return Certificate::new(self.clone(),witness.clone(),fctrs)	
+	   }
 
-            if witness.exp_residue(&x_minus, self) != Mpz::one() {
-                // If any witness says it's composite then it is
-                certificate[0] = witness;
-
-                return (false, certificate);
-            }
-
-            'inner: for (idx, j) in fctrs.iter().enumerate() {
-                if witness.exp_residue(&x_minus.ref_euclidean(j).0, self) == Mpz::one() {
+           
+            'inner: for (idx, i) in fctrs.iter().enumerate() {
+                if witness.exp_residue(i.clone(), self.clone()).is_unit(){
                     break 'inner;
                 }
                 if idx == fctrs.len() - 1 {
-                    certificate[0] = witness;
-
-                    return (true, certificate);
+                    return Certificate::new(self.clone(),witness.clone(),fctrs);
                 }
             }
-        }
+	  }
+    
+    
     }
     
     //#[cfg(not(feature="parallel"))]
-    fn prime_list(&self, sup: &Self) -> Vec<Self> {
+    fn prime_list(&self, sup: Self) -> Vec<Self> {
         //currently only supports less than, and not inclusive
 
-        let mut delta = self.ref_subtraction(sup);
+        let mut delta = self.ref_subtraction(&sup);
         delta.successor();
-        match delta.to_u64() {
-            Some(x) => {
+        match u64::try_from(delta) {
+            Ok(x) => {
                 let mut primevector = vec![];
                 let mut p = self.clone();
               //  let primevec = 17000u64.prime_list(&30_000);
@@ -322,45 +311,11 @@ impl NumberTheory for Mpz {
                 }
                 primevector
             }
-            None => panic!("Incomputably large interval"),
+            Err(_) => panic!("Incomputably large interval"),
         }
         //  return Vec::new();
     }
-    /*
-    fn prime_list2(&self, sup: &Self) -> Vec<Self>{
-      let mut delta = self.ref_subtraction(sup);
-      delta.successor();
-      
-      match delta.to_u64() {
-            Some(x) => {
-                let mut primevector = vec![];
-                let mut p = self.clone();
-                let primevec = 17000u64.prime_list(&30_000);
-                
-                for _ in 0..x{
-                
-                if p.trial_div()&p.trial_list(){
-                  
-                 }
-                }
-                    if p.is_prime() {
-                        primevector.push(p.clone())
-                    }
-                    p.successor();
-                }
-                primevector
-            }
-            None => panic!("Incomputably large interval"),
-        }
-      
-    }
-    */
-    /*
-         #[cfg(feature="parallel")]
-        fn prime_list(&self, sup: &Self) -> Vec<Self> {
-
-        }
-    */
+    
     fn nth_prime(&self) -> NTResult<Self> {
        
         let mut count = Mpz::zero();
@@ -382,7 +337,7 @@ impl NumberTheory for Mpz {
 
     fn pi(&self) -> Self {
       match self.to_u128(){
-         Some(x) => return Mpz::from_u128(x.pi()),
+         Some(x) => return Mpz::from(x.pi()),
          None => (),
       }
         let mut count = 0u64;
@@ -393,7 +348,7 @@ impl NumberTheory for Mpz {
                 count += 1;
             }
             if start.u_cmp(self) == Ordering::Equal {
-                return Mpz::from_u64(count);
+                return Mpz::from(count);
             }
         }
     }
@@ -401,7 +356,7 @@ impl NumberTheory for Mpz {
 
     fn prime_gen(x: u32) -> NTResult<Mpz> {
         if x < 128 {
-         return u128::prime_gen(x).map(Mpz::from_u128)  
+         return u128::prime_gen(x).map(Mpz::from)  
         }
         
         let mut form = Mpz::one().shl(x as usize-1);
@@ -423,7 +378,7 @@ impl NumberTheory for Mpz {
         }
     } 
 
-    fn gcd(&self, other: &Self) -> Self {
+    fn gcd(&self, other: Self) -> Self {
         let mut a = self.clone();
         let mut b = other.clone();
 
@@ -439,7 +394,7 @@ impl NumberTheory for Mpz {
     }
     
     // Z variant
-    fn extended_gcd(&self, other: &Self) -> (Self, Self, Self) {
+    fn extended_gcd(&self, other: Self) -> (Self, Self, Self) {
         let mut gcd = self.clone();
         let mut new_r = other.clone();
         let mut bezout_1 = Mpz::one();
@@ -448,7 +403,7 @@ impl NumberTheory for Mpz {
         let mut new_t = Mpz::one();
 
         while new_r != Mpz::zero() {
-            let (quo, _rem) = gcd.euclidean_div(&new_r);
+            let (quo, _rem) = gcd.euclidean_div(new_r.clone());
             let mut temp = new_r.clone();
             new_r = gcd.ref_subtraction(&quo.ref_product(&temp));
             gcd = temp.clone();
@@ -464,28 +419,25 @@ impl NumberTheory for Mpz {
         (gcd, bezout_1, bezout_2)
     }
 
-    fn lcm(&self, other: &Self) -> Self {
-        if self == &Mpz::zero() && other  == &Mpz::zero(){
-          return Mpz::zero()
+    fn lcm(&self, other: Self) -> NTResult<Self> {
+        if self == &Mpz::zero() && other  == Mpz::zero(){
+          return NTResult::Eval(Mpz::zero())
         }
         
-        let cf = self.gcd(other);
-        self.euclidean_div(&cf).0.ref_product(other)
+        let cf = self.gcd(other.clone());
+        NTResult::Eval(self.euclidean_div(cf).0.ref_product(&other))
     }
 
-    fn checked_lcm(&self, other: &Self) -> NTResult<Self> {
-        NTResult::Eval(self.lcm(other))
-    }
-
-    fn factor(&self) -> Vec<Self> {
+// FIXME 
+    fn factor(&self) -> NTResult<Factorization<Self>> {
         let mut n = self.clone();
-        let mut factors: Vec<Self> = vec![];
+        let mut factors: Factorization<Self> = Factorization::new();
         let twofactor = n.trailing_zeros();
 
         if twofactor > 0 {
             n.mut_shr(twofactor as usize);
-            factors.push(Mpz::from_u64(2u64));
-            factors.push(Mpz::from_u64(twofactor));
+            factors.add_factor(Mpz::from(2u64));
+            factors.add_power(twofactor);
         }
 
         for i in PRIMELIST[1..].iter() {
@@ -494,7 +446,7 @@ impl NumberTheory for Mpz {
 
             if rem == 0 {
                 let mut count = 1u64;
-                factors.push(Mpz::from_u64(*i as u64));
+                factors.add_factor(Mpz::from(*i as u64));
                 n = quo;
 
                 'inner: loop {
@@ -507,26 +459,27 @@ impl NumberTheory for Mpz {
                     count += 1;
                 }
 
-                factors.push(Mpz::from_u64(count));
+                factors.add_power(count);
             }
         }
         n.normalize();
 
-        if n.is_one(){
-            return factors;
+        if n.is_unit(){
+             //       println!("Final {}",factors);
+            return NTResult::Eval(factors);
         }
 
         if n.sprp_check(5) {
             // stops if prime
-            factors.push(n.clone());
-            factors.push(Mpz::one());
-            return factors;
+            factors.add_factor(n.clone());
+            factors.add_power(1);
+            return NTResult::Eval(factors);
         }
 
-        'outer: while !n.is_one() {
+        'outer: while !n.is_unit() {
             let k = n.rho_mpz();
 
-            factors.push(k.clone());
+            factors.add_factor(k.clone());
             let mut count = 0u64;
 
             'secinner: loop {
@@ -539,42 +492,24 @@ impl NumberTheory for Mpz {
                 n.normalize(); // remove ?
                 count += 1;
             }
-            factors.push(Mpz::from_u64(count));
+            factors.add_power(count);
 
             if n.sprp_check(5) {
                 // stops if  n is prime
-                factors.push(n);
-                factors.push(Mpz::one());
+                factors.add_factor(n);
+                factors.add_power(1);
                 break 'outer;
             }
         }
 
-        factors
+        NTResult::Eval(factors)
     }
     
-    fn checked_factor(&self) -> NTResult<Vec<Self>>{
-     
-     match self.to_u64(){
-       Some(x) => {
-       if x == 0 {
-         return NTResult::InfiniteSet
-       }
-       if x == 1 {
-         return NTResult::DNE
-       }  
-       }
-       None => (),
-     }
-     
-     NTResult::Eval(self.factor())
-    
-    }
-
 
     /// Returns the integer component of sqrt(x)
     fn sqrt(&self) -> (Self, Self) {
         if self.len() < 3 {
-            let k = Mpz::from_u64(self.to_u128().unwrap().sqrt().0 as u64);
+            let k = Mpz::from(self.to_u128().unwrap().sqrt().0 as u64);
             if !self.is_positive() {
                 return (k, Mpz::one());
             }
@@ -584,7 +519,7 @@ impl NumberTheory for Mpz {
 
         loop {
             let s = est.clone();
-            let t = s.ref_addition(&self.euclidean_div(&s).0);
+            let t = s.ref_addition(&self.euclidean_div(s.clone()).0);
             est = t.shr(1);
             remove_lead_zeros(&mut est.limbs);
             if est.u_cmp(&s) == Ordering::Greater || est.u_cmp(&s) == Ordering::Equal {
@@ -596,19 +531,19 @@ impl NumberTheory for Mpz {
         }
     }
 
-    fn nth_root(&self, n: &Self) -> (Self, Self) {
-        let y = n.to_u64().unwrap();
+    fn nth_root(&self, n: Self) -> (Self, Self) {
+        let y = u64::try_from(n).unwrap();
         let shift = ((self.bit_length() / y) - 1) * (y - 1);
         let mut est = self.shr(shift as usize).abs();
-        let scalar = Mpz::from_u64(y - 1);
-        let ymp = Mpz::from_u64(y);
+        let scalar = Mpz::from(y - 1);
+        let ymp = Mpz::from(y);
 
         loop {
             let s = est.clone();
             let t = s
                 .ref_product(&scalar)
-                .ref_addition(&self.euclidean_div(&s.pow(y - 1)).0);
-            est = t.euclidean_div(&ymp).0;
+                .ref_addition(&self.euclidean_div(s.pow(y - 1)).0);
+            est = t.euclidean_div(ymp.clone()).0;
             if est.u_cmp(&s) == Ordering::Greater || est.u_cmp(&s) == Ordering::Equal {
                 if self.sign == Sign::Negative && self.is_even() {
                     return (s, Mpz::one());
@@ -619,21 +554,21 @@ impl NumberTheory for Mpz {
     }
     // FIXME : Use prime exponents and fix for x < 0
    fn max_exp(&self) -> (Self,Self){
-     let mut expo = Mpz::from_u64(self.bit_length());
+     let mut expo = Mpz::from(self.bit_length());
      let mut flag = true;
      if  self.is_positive(){
        flag = false
      }
       loop{
-        let mut base = self.abs().nth_root(&expo).0;
-         if base.pow(expo.to_u64().unwrap()) == self.abs(){
+        let mut base = self.abs().nth_root(expo.clone()).0;
+         if base.pow(u64::try_from(expo.clone()).unwrap()) == self.abs(){
          if flag{
            base.neg();
          }
-           return(base,expo)
+           return(base,expo.clone())
          }
-         expo.inv_successor();
-         if expo.to_u64().unwrap() == 1{
+         expo.predecessor();
+         if u64::try_from(expo.clone()).unwrap() == 1{
          let mut val = self.clone();
           if flag {
             val.neg()
@@ -646,11 +581,11 @@ impl NumberTheory for Mpz {
 
     
     fn radical(&self) -> NTResult<Self>{
-       match self.to_u64(){
-        Some(x) => x.radical().map(Mpz::from_u64),
-        None => {
+       match u64::try_from(self.clone()){
+        Ok(x) => x.radical().map(Mpz::from),
+        Err(_) => {
           let mut rad = Mpz::one();
-           for i in self.factor().iter().step_by(2) {
+           for i in self.factor().unwrap().factor_iter(){
               rad = rad.ref_product(i)
            }
           NTResult::Eval(rad)
@@ -658,9 +593,10 @@ impl NumberTheory for Mpz {
        }
     }
 
-    fn k_free(&self, x: &Self) -> bool {
-        for i in self.factor()[1..].iter().step_by(2) {
-            if i == x {
+    fn k_free(&self, x: Self) -> bool {
+       let x = u64::try_from(x).unwrap();
+        for i in self.factor().unwrap().power_iter(){
+            if *i == x {
                 return false;
             }
         }
@@ -671,36 +607,38 @@ impl NumberTheory for Mpz {
     
        match self.to_u128(){
       
-         Some(x)=> return Mpz::from_u128(x.euler_totient()),
+         Some(x)=> return Mpz::from(x.euler_totient()),
          None => (),
        }
        
-        let mut factors = self.factor();
+        let mut factors = self.factor().unwrap();
 
         let mut denominator = Mpz::one();
         let mut numerator = Mpz::one();
 
-        for i in factors.iter().step_by(2) {
+        for i in factors.factor_iter() {
             denominator = denominator.ref_product(i)
         }
-        for i in factors.iter_mut().step_by(2) {
-            sub_slice(&mut i.limbs[..], &[1]);
-            numerator = numerator.ref_product(i)
+        for i in factors.factor_iter() {
+            let mut fctr = i.clone();
+            fctr.predecessor();
+            numerator = numerator.ref_product(&fctr);
         }
 
         (self.ref_euclidean(&denominator).0).ref_product(&numerator)
     }
 
-    fn jordan_totient(&self, k: &Self) -> NTResult<Self> {
-        if self.clone() == Mpz::zero() || self.is_one(){
+    fn jordan_totient(&self, k: Self) -> NTResult<Self> {
+        if self.clone() == Mpz::zero() || self.is_unit(){
           return NTResult::Eval(self.clone())
         }
-        let fctr = self.factor();
+        let fctr = self.factor().unwrap();
         let mut denom = Mpz::one();
         let mut numer = Mpz::one();
         let negone = Mpz::unchecked_new(Sign::Negative, vec![1]);
-        for i in fctr.iter().step_by(2) {
-            let pow = i.pow(k.to_u64().unwrap());
+        let value = u64::try_from(k).unwrap();
+        for i in fctr.factor_iter() {
+            let pow = i.pow(value);
 
             denom = denom.ref_product(&pow);
 
@@ -709,52 +647,52 @@ impl NumberTheory for Mpz {
 
         NTResult::Eval(
             numer
-                .ref_product(&self.pow(k.to_u64().unwrap()))
+                .ref_product(&self.pow(value))
                 .ref_euclidean(&denom)
                 .0,
         )
     }
     
-    fn carmichael_totient(&self) -> NTResult<Self>{
+    fn exponent(&self) -> NTResult<Self>{
        
        match self.to_u128(){
-         Some(x)=> return x.carmichael_totient().map(Mpz::from_u128),
+         Some(x)=> return x.exponent().map(Mpz::from),
          None => (),
        }
        
-       let fctr = self.factor();
-       let base = fctr.iter().step_by(2).map(|z| z.clone()).collect::<Vec<Self>>();
-       let power = fctr[1..].iter().step_by(2).map(|k| k.to_u64().unwrap()).collect::<Vec<u64>>();
+       let fctr = self.factor().unwrap();
+       //let base = fctr.iter()..map(|z| z.clone()).collect::<Vec<Self>>();
+       let power = fctr.power_iter().cloned().collect::<Vec<u64>>();
        let two = Mpz::two();
        let mut result = Mpz::one();
-      for (idx,el) in base.iter().enumerate(){
+      for (idx,el) in fctr.factor_iter().enumerate(){
         if el == &two && power[0] > 2{
          let phi = ((el.pow(power[idx]).ref_euclidean(el).0).ref_product(&el.ref_subtraction(&Mpz::one()))).shr(1);
-          result = result.lcm(&phi);
+          result = result.lcm(phi).unwrap();
         }
        else{
          let phi = (el.pow(power[idx]).ref_euclidean(el).0).ref_product(&el.ref_subtraction(&Mpz::one()));
-         result = result.lcm(&phi);
+         result = result.lcm(phi).unwrap();
        } 
       }
      NTResult::Eval(result)
     }
 
-    fn dedekind_psi(&self, k: &Self) -> NTResult<Self> {
+    fn dedekind_psi(&self, k: Self) -> NTResult<Self> {
      if *self == Mpz::zero(){
          return NTResult::Infinite
        }
         let k2 = k.shl(1);
-     self.jordan_totient(&k2).map(|y| y.ref_euclidean(&self.jordan_totient(k).unwrap()).0)
+     self.jordan_totient(k2).map(|y| y.ref_euclidean(&self.jordan_totient(k).unwrap()).0)
     }
 
-    fn legendre(&self, p: &Self) -> i8 {
+    fn legendre(&self, p: Self) -> i8 {
         let mut p_minus = p.clone();
         p_minus.set_sign(Sign::Positive);
-        p_minus.inv_successor();
+        p_minus.predecessor();
 
         let pow = p_minus.ref_euclidean(&Mpz::two()).0;
-        let k = self.exp_residue(&pow, p);
+        let k = self.exp_residue(pow, p);
 
         if k == Mpz::one() {
             return 1;
@@ -765,14 +703,14 @@ impl NumberTheory for Mpz {
         0i8
     }
 
-    fn checked_legendre(&self, p: &Self) -> NTResult<i8> {
+    fn checked_legendre(&self, p: Self) -> NTResult<i8> {
         let mut plus = p.clone();
         plus.set_sign(Sign::Positive);
         if plus == Mpz::two() {
             return NTResult::Undefined;
         }
         match plus.is_prime() {
-            true => NTResult::Eval(self.legendre(&plus)),
+            true => NTResult::Eval(self.legendre(plus)),
             false => NTResult::Undefined,
         }
     }
@@ -783,12 +721,12 @@ impl NumberTheory for Mpz {
           None => (),
         }
         
-        let mut primeomega = Mpz::zero();
+        let mut primeomega = 0;
 
-        for i in self.factor()[1..].iter().step_by(2) {
-            primeomega.mut_addition(i.clone());
+        for i in self.factor().unwrap().power_iter() {
+            primeomega+=i;
         }
-        if primeomega.is_even() {
+        if primeomega&1==0 {
             return 1;
         }
         -1
@@ -798,14 +736,14 @@ impl NumberTheory for Mpz {
        if *self == Mpz::zero(){
          return NTResult::Eval(Mpz::zero())
        }
-       if self.is_one(){
+       if self.is_unit(){
         return NTResult::Eval(Mpz::zero())
        }
-       let fctr = self.factor();
+       let fctr = self.factor().unwrap();
        let mut sum = Mpz::zero();
        
-     for i in 0..fctr.len() / 2 {
-        sum.mut_addition(fctr[2*i+1].ref_product(&self.ref_euclidean(&fctr[2*i]).0))
+     for i in 0..fctr.base.len() / 2 {
+        sum.mut_addition(Mpz::from(fctr.power[i]).ref_product(&self.ref_euclidean(&fctr.base[i]).0))
       }
     NTResult::Eval(sum)
     }
@@ -815,11 +753,11 @@ impl NumberTheory for Mpz {
           Some(eburum) => return eburum.mangoldt(),
           None => (),
         }
-        let fctr = self.factor();
-        if fctr.len() != 2 {
+        let fctr = self.factor().unwrap();
+        if fctr.base.len() != 2 {
             return 0f64;
         }
-        fctr[0].ln()
+        fctr.base[0].ln()
     }
     
     
@@ -828,27 +766,30 @@ impl NumberTheory for Mpz {
           Some(eburum) => return eburum.mobius(),
           None => (),
         }
-      let fctr = self.factor();
+      let fctr = self.factor().unwrap();
+      /*
       if fctr.len() == 1{ // if only one factor then return -1
          return -1
       }
-      for i in 0..fctr.len()/2{
-        if fctr[2*i+1].to_u64().unwrap()  > 1{
+      */
+      for i in fctr.power_iter(){
+        if *i  > 1{
          return 0
         }
       }
-      let fctrsum = fctr[1..].iter().step_by(2).map(|k| k.to_u64().unwrap()).sum::<u64>();
+      
+      let fctrsum = fctr.power_iter().sum::<u64>();
       if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
       1
     }
 
-    fn jacobi(&self, k: &Self) -> i8 {
+    fn jacobi(&self, k: Self) -> i8 {
         let mut n = self.clone();
         let mut p = k.clone();
         let mut t = 1i8;
-        n = n.euclidean_div(&p).1;
+        n = n.euclidean_div(k).1;
 
         while n != Mpz::zero() {
             let zeros = n.trailing_zeros();
@@ -864,7 +805,7 @@ impl NumberTheory for Mpz {
                 t = -t;
             }
 
-            n = n.euclidean_div(&p).1;
+            n = n.euclidean_div(p.clone()).1;
         }
 
         if p == Mpz::one() {
@@ -874,14 +815,14 @@ impl NumberTheory for Mpz {
         }
     }
 
-    fn checked_jacobi(&self, k: &Self) -> NTResult<i8> {
-        if k.sign == Sign::Positive && k != &Mpz::zero() && !k.is_even() {
+    fn checked_jacobi(&self, k: Self) -> NTResult<i8> {
+        if k.sign == Sign::Positive && k != Mpz::zero() && !k.is_even() {
             return NTResult::Eval(self.jacobi(k));
         }
         NTResult::Undefined
     }
     
-     fn kronecker(&self, k: &Self) -> i8{
+     fn kronecker(&self, k: Self) -> i8{
      let mut multiplier = 1;
     
     if !k.is_positive() && !self.is_positive(){
@@ -889,19 +830,19 @@ impl NumberTheory for Mpz {
     }
      let x = self.clone();
      if k.is_zero(){
-      if x.is_one(){
+      if x.is_unit(){
          return 1
       }
      return 0
     }
-   if k.is_one(){
+   if k.is_unit(){
       return 1
    }
-   let fctr = k.factor();
+   let fctr = k.factor().unwrap();
    let mut start = 0;
    let mut res = 1;
    let two = Mpz::two();
-   if fctr[0] == two{
+   if fctr.base[0] == two{
      start = 1;
      if x.is_even(){
      res = 0;
@@ -910,14 +851,14 @@ impl NumberTheory for Mpz {
       res=1
      }
      else{
-       res = (-1i8).pow(fctr[1].to_u64().unwrap() as u32)
+       res = (-1i8).pow(fctr.power[1] as u32)
      }
    }
-   if fctr[0] == two && fctr.len() == 2{
+   if fctr.base[0] == two && fctr.base.len() == 2{
      return res*multiplier
    }
-   for i in start..fctr.len()/2{
-     res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1].to_u64().unwrap() as u32);
+   for i in start..fctr.base.len(){
+     res*=self.legendre(fctr.base[i].clone()).pow(fctr.power[i] as u32);
    }
    res*multiplier
 }
@@ -926,16 +867,15 @@ impl NumberTheory for Mpz {
        if *self == Mpz::zero(){
          return NTResult::Infinite
        }
-       if self.is_one(){
+       if self.is_unit(){
         return NTResult::DNE
        }
-        let k = self.factor();
-        NTResult::Eval(k[k.len() - 2].clone())
+      NTResult::Eval(self.factor().unwrap().max())
     }
     
     
 
-    fn is_smooth(&self, b: &Self) -> bool {
+    fn is_smooth(&self, b: Self) -> bool {
      match self.smooth(){
       NTResult::Infinite => false,
       NTResult::Eval(x) => {
@@ -946,4 +886,87 @@ impl NumberTheory for Mpz {
       _=> false,
      }
    }
+   
+   fn ord(&self, n: Self) -> NTResult<Self>{
+
+        let ord_2 = |a: Mpz, p: u64| -> Mpz{
+        let modulo = Mpz::one().shl(p as usize);
+        let mut b = a.ref_euclidean(&modulo).1;
+   
+         if b == Mpz::one(){
+            return Mpz::one();
+         }
+      for i in 1..p{
+         b = b.quadratic_residue(modulo.clone());
+         if b == Mpz::one(){
+           return Mpz::one().shl(i as usize);
+         }
+    }
+    return p.into();
+    };
+
+// Given ord(a,p)  calculate ord(a,p^n)
+    let  pp_ord = |a: Mpz, b: Mpz, p: Mpz, e: u64| -> Mpz{
+        let fullpow = p.pow(e);
+
+     	for i in 0..e+1{
+          let partial = b.ref_product(&p.pow(i));
+          if a.exp_residue(partial.clone(),fullpow.clone()) == Mpz::one(){
+             return partial;
+           }
+        }
+    return fullpow;
+    };
+
+    let p_ord = |a: Mpz, p: Mpz| -> Mpz{
+
+ 	  let mut pminus = p.ref_subtraction(&Mpz::one());  
+  	  let fctr = pminus.factor().unwrap();
+   	  let mut m = pminus.clone();
+
+ 	for i in fctr.pair_iter(){
+
+ 	    for _ in 0..*i.1{
+              let reduced = m.ref_euclidean(&i.0).0;
+
+	        if a.exp_residue(reduced.clone(),p.clone()) == Mpz::one(){
+                   m = reduced;
+                }
+          	else{
+                   break;
+          	}
+            }
+        }
+       m
+     };
+
+
+    if !self.coprime(n.clone()){
+       return NTResult::DNE;
+    }
+
+    let fctr = n.clone().factor().unwrap();
+    let mut fullord = Mpz::one();
+
+    for i in fctr.pair_iter(){
+     let mut ord : Self;
+      if *i.0 == Mpz::two(){
+         ord = ord_2(self.clone(),*i.1);
+      }
+      else{
+        ord = p_ord(self.clone(),i.0.clone());
+        if *i.1 > 1{
+           ord=pp_ord(self.clone(),ord,i.0.clone(),*i.1);
+        }
+      }
+       fullord = fullord.lcm(ord).unwrap(); 
+    }
+    NTResult::Eval(fullord)
+       
+   }
+   
+   fn mul_inverse(&self, n: Self) -> NTResult<Self>{
+       unimplemented!()
+   }
+   
 }

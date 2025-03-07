@@ -6,6 +6,5 @@ mod sliceops;
 pub(crate) mod mpz;
 mod mpz_ent;
 pub mod sign;
-//pub (crate) mod montgomerympz;
 mod mpz_arith;
 mod mpz_prime;

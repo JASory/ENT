@@ -2,8 +2,32 @@ use crate::arithmetic::inlineops::*;
 use crate::arithmetic::muldiv::*;
 use crate::arithmetic::sliceops::*;
 use crate::Mpz;
-use crate::Sign;
+use crate::arithmetic::sign::Sign;
 use std::cmp::Ordering;
+use crate::ntrait::NumberTheory;
+
+impl std::cmp::PartialOrd for Mpz{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self.sign,other.sign){
+         (Sign::Negative,Sign::Positive) => Some(std::cmp::Ordering::Less),
+         (Sign::Positive,Sign::Negative) => Some(std::cmp::Ordering::Greater),
+         _=> Some(self.u_cmp(other)),
+       }
+     }  
+}
+
+impl std::cmp::Eq for Mpz{}
+
+impl std::cmp::Ord for Mpz{
+    fn cmp(&self,other: &Self) -> std::cmp::Ordering{
+       match (self.sign,other.sign){
+         (Sign::Negative,Sign::Positive) => std::cmp::Ordering::Less,
+         (Sign::Positive,Sign::Negative) => std::cmp::Ordering::Greater,
+         _=> self.u_cmp(other),
+       }
+        
+    }
+}
 
 impl Mpz {
     /*
@@ -170,11 +194,11 @@ impl Mpz {
             return Mpz::zero();
         }
 
-        if self.is_one() {
+        if self.is_unit() {
             return Mpz::unchecked_new(self.sign.mul(&other.sign), other.limbs.clone());
         }
 
-        if other.is_one() {
+        if other.is_unit() {
             return Mpz::unchecked_new(self.sign.mul(&other.sign), self.limbs.clone());
         }
 
@@ -195,13 +219,13 @@ impl Mpz {
             self.sign = Sign::Positive;
         }
 
-        if self.is_one() {
+        if self.is_unit() {
             self.limbs.truncate(0);
             self.limbs.extend_from_slice(&other.limbs[..]);
             self.sign = self.sign.mul(&other.sign);
         }
 
-        if other.is_one() {
+        if other.is_unit() {
             self.sign = self.sign.mul(&other.sign);
         } else {
             let mut t = vec![0u64; self.len() + other.len() + 1];

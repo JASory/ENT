@@ -1,6 +1,6 @@
 
 /// Enum representing the sign
-#[derive(PartialEq, Clone, Debug, Default)]
+#[derive(PartialEq, Clone,Copy, Debug, Default)]
 pub enum Sign {
    /// N >= 0 representation
     #[default]

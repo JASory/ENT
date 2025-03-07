@@ -4,8 +4,8 @@ use crate::arithmetic::inlineops::*;
 use crate::arithmetic::sign::Sign;
 use crate::arithmetic::sliceops::*;
 use std::cmp::Ordering;
-
-use crate::traits::NumberTheory;
+use crate::primitive::factorprim::poly_factor_128;
+use crate::ntrait::NumberTheory;
 
 /// Arbitrary precision integer (Z)
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -22,6 +22,103 @@ impl std::fmt::Display for Mpz{
   }
 }
 
+impl std::convert::From<u64> for Mpz{
+   fn from(val: u64) -> Self{
+        Mpz::unchecked_new(Sign::Positive, vec![val])
+   }
+}
+
+impl std::convert::From<u32> for Mpz{
+   fn from(val: u32) -> Self{
+        Mpz::unchecked_new(Sign::Positive, vec![val.into()])
+   }
+}
+
+impl std::convert::From<i64> for Mpz{
+   fn from(val: i64) -> Self{
+        if val < 0i64 {
+            return Mpz::unchecked_new(Sign::Negative, vec![val.unsigned_abs()]);
+        }
+        Mpz::unchecked_new(Sign::Positive, vec![val as u64])
+      }  
+}
+
+impl std::convert::From<i32> for Mpz{
+   fn from(val: i32) -> Self{
+        if val < 0i32 {
+            return Mpz::unchecked_new(Sign::Negative, vec![val.unsigned_abs() as u64]);
+        }
+        Mpz::unchecked_new(Sign::Positive, vec![val as u64])
+      }  
+}
+
+impl std::convert::From<u128> for Mpz{
+   fn from(val: u128) -> Self{
+      let (x_lo, x_hi) = split(val);
+        if x_hi == 0 {
+            return Mpz::unchecked_new(Sign::Positive, vec![x_lo]);
+        }
+        Mpz::unchecked_new(Sign::Positive, vec![x_lo, x_hi])
+   }
+}
+
+impl std::convert::From<i128> for Mpz{
+
+   fn from(val: i128) -> Self {
+        if val < 0i128 {
+            let (x_lo, x_hi) = split(val.unsigned_abs());
+            if x_hi == 0 {
+                return Mpz::unchecked_new(Sign::Negative, vec![x_lo]);
+            }
+            Mpz::unchecked_new(Sign::Negative, vec![x_lo, x_hi])
+        } else {
+            Mpz::from(val as u128)
+        }
+    }
+  }
+
+impl std::convert::TryFrom<Mpz> for u64{
+      type Error = &'static str;
+
+   fn try_from(x: Mpz) ->  Result<Self, Self::Error>{
+        
+        match x.len() {
+         0 => Ok(0u64),
+         1 => Ok(x.limbs[0]),
+         _=> Err("Multiprecision value exceeds 2^64"),
+        }
+   }
+
+}  
+
+impl std::convert::TryFrom<Mpz> for i64{
+     type Error = &'static str;
+
+  fn try_from(x: Mpz) -> Result<Self,Self::Error>{
+     
+      match x.len(){
+          0 => Ok(0i64),
+          1 => {
+             let value = x.limbs[0];
+            if (value>>63)==1{
+               return  Err("Single precision value exceeds 2^63");
+             }
+            let mut res : i64 = value as i64;
+            if x.sign == Sign::Negative{
+               res = -res;
+            }
+            return Ok(res);
+           }
+          _=> Err("Multiprecision value exceeds 2^64"),
+      }
+  }
+}  
+  /*
+ impl std::str::FromStr for Mpz{
+ 
+ } 
+
+*/
 impl Mpz {
     /**
 
@@ -32,11 +129,11 @@ impl Mpz {
 
      let bignum = Mpz::new(Sign::Positive, vec![5,5]);
 
-     let fortyfour = Mpz::from_u128(44u128);
+     let fortyfour = Mpz::from(44u128);
 
-     let fortyfour_neg = Mpz::from_i128(-44i128);
+     let fortyfour_neg = Mpz::from(-44i128);
 
-     let twopow = Mpz::from_u64(128);
+     let twopow = Mpz::from(128u64);
 
 
      assert_eq!("92233720368547758085", bignum.to_string());
@@ -47,7 +144,6 @@ impl Mpz {
     ```
 
     */
-    
       /// Returns a positive x from a big-endian vector representation 
     pub fn u_new(limbs: Vec<u64>) -> Self {
         Mpz::from_slice(Sign::Positive, &limbs[..])
@@ -77,63 +173,7 @@ impl Mpz {
         }
         Mpz { sign, limbs }
     }
-/// Return x from u128
-    pub fn from_u128(x: u128) -> Self {
-        let (x_lo, x_hi) = split(x);
-        if x_hi == 0 {
-            return Mpz::unchecked_new(Sign::Positive, vec![x_lo]);
-        }
-        Mpz::unchecked_new(Sign::Positive, vec![x_lo, x_hi])
-    }
-/// Return x from i128
-    pub fn from_i128(x: i128) -> Self {
-        if x < 0i128 {
-            let (x_lo, x_hi) = split(x.unsigned_abs());
-            if x_hi == 0 {
-                return Mpz::unchecked_new(Sign::Negative, vec![x_lo]);
-            }
-            Mpz::unchecked_new(Sign::Negative, vec![x_lo, x_hi])
-        } else {
-            Mpz::from_u128(x as u128)
-        }
-    }
-/// Return x from u64
-    pub fn from_u64(x: u64) -> Self {
-        Mpz::unchecked_new(Sign::Positive, vec![x])
-    }
-/// Return x from i64
-    pub fn from_i64(x: i64) -> Self {
-        if x < 0i64 {
-            return Mpz::unchecked_new(Sign::Negative, vec![x.unsigned_abs()]);
-        }
-        Mpz::unchecked_new(Sign::Positive, vec![x as u64])
-    }
-     /// Converts to 64-bit unsigned integer if it can fit
-    pub fn to_u64(&self) -> Option<u64> {
-        match self.len() {
-            0 => Some(0u64),
-            1 => Some(self.limbs[0]),
-            _ => None,
-        }
-    }
     
-    /// Convert to 64-bit signed integer
-    pub fn to_i64(&self) -> Option<i64>{
-       let mut flag : i64 = 1;
-       if !self.is_positive(){
-         flag = -1;
-       }
-        match self.len() {
-            0 => Some(0i64),
-            1 => {
-             if self.limbs[0] > i64::MAX as u64{
-              return None
-             }  
-             Some((self.limbs[0] as i64)*flag)
-            },
-            _ => None,
-        }
-    }
     /// Converts to 32-bit unsigned integer if it can fit 
     pub fn to_u32(&self) ->  Option<u32>{
        match self.len() {
@@ -147,6 +187,7 @@ impl Mpz {
             _ => None,
         }
     }
+    
      /// Converts to 128-bit unsigned integer if it can fit
     pub fn to_u128(&self) -> Option<u128> {
         match self.len() {
@@ -207,7 +248,7 @@ impl Mpz {
     ```
     use number_theory::Mpz;
 
-     let value = Mpz::from_u64(50620);
+     let value = Mpz::from(50620u64);
      assert_eq!(value.to_radix_vec(127),vec![74,17,3])
     ```
     */
@@ -264,6 +305,7 @@ impl Mpz {
 
         from_string(k).map(|y| Mpz::unchecked_new(sign, y))
     }
+    
     /// Returns 0
     pub fn zero() -> Self {
         Mpz::unchecked_new(Sign::Positive, vec![0])
@@ -284,20 +326,13 @@ impl Mpz {
     pub fn abs(&self) -> Self {
         Self::new(Sign::Positive, self.limbs.clone())
     }
-    ///Checks if n == 1 or n == -1
-    pub fn is_one(&self) -> bool {
-        if self.len() == 1 && self.limbs[0] == 1 {
-            return true;
-        }
-        false
-    }
     
     /// Checks if n == 0
     pub fn is_zero(&self) -> bool {
        if self.len() == 0{
          return true
        }
-       if self.len() == 1 && self.limbs[0] == 1{
+       if self.len() == 1 && self.limbs[0] == 0{
          return true
        }
        false
@@ -518,7 +553,7 @@ impl Mpz {
     }
     
     /// Inverse successor function. Subtracts 1 ignoring sign
-    pub fn inv_successor(&mut self) {
+    pub fn predecessor(&mut self) {
         if self.len() == 0 {
             panic!("Value already zero")
         }
@@ -652,13 +687,18 @@ impl Mpz {
         }
         a
     }
-
+    
+// FIXME 
     pub(crate) fn rho_mpz(&self) -> Self {
+    
+     match self.to_u128(){
+      Some(x) => Mpz::from(poly_factor_128(x)),
+      None => {
         let mut x = Mpz::two();
         let mut y = Mpz::two();
         let mut d = Mpz::one();
         loop {
-            while d == Mpz::one() {
+            while d.is_unit(){
                 x = x.mod_sqr_1(self);
                 y = y.mod_sqr_1(self).mod_sqr_1(self).ref_euclidean(self).1;
                 d = x.delta(&y).gcd(self);
@@ -667,13 +707,16 @@ impl Mpz {
             if d.is_prime() {
                 return d;
             }
-            x = Mpz::from_u64(u64::rng());
+            x = Mpz::from(u64::rng());
             y = x.clone();
             d = Mpz::one();
         }
+       
+       },
+    }
     }
 
-    /// Aproximation of the natural logarithm ln(x)
+    /// Approximation of the natural logarithm ln(x)
     pub fn ln(&self) -> f64 {
         let mut iter_sqrt = 1u64;
         let mut n = self.sqrt().0;
@@ -682,7 +725,7 @@ impl Mpz {
             iter_sqrt += 1;
         }
 
-        (n.to_u64().unwrap() as f64).ln() * 2f64.powf(iter_sqrt as f64)
+        (u64::try_from(n).unwrap() as f64).ln() * 2f64.powf(iter_sqrt as f64)
     }
     /// Approximation of the base-2 logarithm
     pub fn log2(&self) -> f64 {
@@ -710,11 +753,11 @@ impl Mpz {
     }
     
     /// Finite ring variant of Extended Euclidean algorithm, see trait definition of extended gcd
-    pub fn eea(&self, other: &Self) -> (Self, Self, Self) {
+    pub fn eea(&self, other: Self) -> (Self, Self, Self) {
     
-    let (gcd, bezout_1, bezout_2) = self.extended_gcd(other);
+    let (gcd, bezout_1, bezout_2) = self.extended_gcd(other.clone());
     
-    (gcd, bezout_1.residue(other), bezout_2.residue(self))
+    (gcd, bezout_1.residue(other.clone()), bezout_2.residue(self.clone()))
      
     }
 

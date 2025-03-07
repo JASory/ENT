@@ -3,54 +3,6 @@
  PRNG
 
 */
-
-pub(crate) fn rng_32() -> u32 {
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    {
-        if is_x86_feature_detected!("rdrand") {
-            let mut x: u32 = 0;
-            unsafe { core::arch::x86_64::_rdrand32_step(&mut x) };
-            return x;
-        }
-    }
-    {
-        let mut seed = std::time::Instant::now().elapsed().as_nanos() as u64; // horrible entropy source
-
-        for _ in 0..10 {
-            seed = seed
-                .overflowing_mul(18029154779448018981u64)
-                .0
-                .overflowing_add(3935559000370003845u64)
-                .0
-        }
-        (seed >> 32) as u32
-    }
-}
-
-pub(crate) fn rng_64() -> u64 {
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    {
-        if is_x86_feature_detected!("rdrand") {
-            let mut x: u64 = 0;
-            unsafe { core::arch::x86_64::_rdrand64_step(&mut x) };
-            return x;
-        }
-    }
-
-    {
-        let mut seed = std::time::Instant::now().elapsed().as_nanos() as u64;
-
-        for _ in 0..10 {
-            seed = seed
-                .overflowing_mul(18029154779448018981u64)
-                .0
-                .overflowing_add(3935559000370003845u64)
-                .0
-        }
-        seed
-    }
-}
-
 /*
 
   Precursor functions

@@ -1,168 +1,115 @@
-use crate::arithmetic::inlineops::*;
-use crate::arithmetic::mpz::Mpz;
-use crate::data::primes::DET_MAX;
+use crate::structs::{Certificate,Factorization};
+use crate::ntrait::{NumberTheory,MontArith,Reduction};
+use crate::primitive::factorprim::{poly_factor_128,drbg};
 use crate::data::primes::PRIMELIST;
-use crate::data::primes::PRIME_INV_128;
-use crate::montgomery::*;
-use crate::traits::NumberTheory;
-use crate::traits::Reduction;
 use crate::result::NTResult;
 
 impl NumberTheory for u128 {
-    fn rng() -> Self {
-        fuse(rng_64(), rng_64())
+
+    fn is_unit(&self) -> bool{
+	if *self == 1{
+	  return true;
+	}
+	false
     }
-    
-    fn residue(&self, ring: &Self) -> Self{
-      if ring == &0{
+
+    fn rng() -> Self {
+       ((u64::rng() as u128)<<64)+(u64::rng() as u128)
+    }
+
+    fn residue(&self, ring: Self) -> Self{
+      if ring == 0{
         return *self
       }
-        *self % *ring
-    } 
-
-    fn euclidean_div(&self, other: &Self) -> (Self, Self) {
-        (*self / *other, *self % *other)
+        *self % ring
+    }
+     
+    fn euclidean_div(&self, other: Self) -> (Self, Self) {
+        (*self / other, *self % other)
+    }
+    
+    fn mul_inverse(&self, n: Self) -> NTResult<Self>{
+       let (gcd,inv,_) = self.extended_gcd(n);
+       
+       if gcd != 1{
+          return NTResult::DNE
+       }
+       NTResult::Eval(inv)
+    }
+    
+    fn fermat(&self,base: Self) -> bool{
+        if *self&1 == 1{
+           let one = self.n_identity();
+           let mbase = base.to_mont(*self);
+           let inv = self.inv_2();
+           return mbase.mont_pow(one,*self-1,inv,*self)==one;
+       }
+       base.exp_residue(*self-1,*self)==1
+       
     }
 
-    fn is_sprp(&self, base: &Self) -> bool {
-        sprp_128(*self, *base)
+    fn strong_fermat(&self, base: Self) -> bool {
+        if *self&1==0{
+            return self.fermat(base);
+        }
+        let inv = self.inv_2();
+        let tzc = self.wrapping_sub(1).trailing_zeros();
+        let one = self.n_identity();
+        let oneinv = machine_prime::mont_prod_128(machine_prime::mont_sub_128(*self, one, *self), one, *self, inv);
+        let b = machine_prime::to_mont_128(base,*self);
+    
+        machine_prime::strong_fermat_128(*self, tzc, b, one, oneinv, inv)
     }
 
     fn is_prime(&self) -> bool {
-        if *self < u64::MAX as u128 {
-            // truncate to faster test
-            return (*self as u64).is_prime();
-        }
-
-        if self & 1 == 0 {
-            return false;
-        }
-
-        if self < &DET_MAX {
-            for i in PRIME_INV_128[..128].iter(){
-                if (*self).wrapping_mul(*i) < *self {
-                    return false;
-                }
-            }
-            if !sprp_128(*self, 2) {
-                return false;
-            }
-            if !sprp_128(*self, 552_491_497){
-              return false;
-            }
-            return true;
-        } else if self < &0x5A2553748E42E7B3F08195A7F78C80{
-            for i in PRIME_INV_128[..128].iter() {
-                if (*self).wrapping_mul(*i) < *self {
-                    return false;
-                }
-            }
-
-            if !sprp_128(*self, 2) {
-                return false;
-            }
-
-            if detect_pseudo_128(*self) {
-                return false;
-            }
-
-            if !jacobi_check_128(*self) {
-                return false;
-            }
-
-            for _ in 0..10{
-                if !sprp_128(*self, u128::rng() % (*self - 3) + 3) {
-                    return false;
-                }
-            }
-
-            return true;
-        } else {
-            // values greater than 2^128/727
-
-            for i in PRIMELIST[1..64].iter() {
-                if *self % *i as u128 == 0 {
-                    return false;
-                }
-            }
-
-            if !sprp_128(*self, 2) {
-                return false;
-            }
-
-            if detect_pseudo_128(*self) {
-                return false;
-            }
-
-            if !jacobi_check_128(*self) {
-                return false;
-            }
-
-            for _ in 0..10 {
-                if !sprp_128(*self, u128::rng() % (*self - 3) + 3) {
-                    return false;
-                }
-            }
-            /*
-            if !mont_lucas(*self){
-              return false
-            }
-              */
-            return true;
-        }
+        machine_prime::is_prime_128(*self)
+        
     }
 
-    fn prime_proof(&self) -> (bool, Vec<Self>) {
+    fn prime_proof(&self) -> Certificate<Self> {
+
         if *self == 2 {
-            return (true, vec![3]);
+            return Certificate::new(*self,3,vec![]);
         }
 
         let x_minus = *self - 1;
-        let fctrs = x_minus
-            .factor()
-            .iter()
-            .step_by(2)
-            .map(|y| *y)
+        let fctrs = x_minus.factor().unwrap()
+            .factor_iter().map(|x| x_minus/ *x)
             .collect::<Vec<Self>>();
-        let mut certificate = vec![2];
-
-        certificate.extend_from_slice(&fctrs[..]);
 
         loop {
-            // loops until it has either been shown to be prime or composite
+            // loops until we get a 
 
-            let mut witness = Self::rng() % (self - 2) + 2;
-
+            let mut witness = Self::rng() % (*self - 2) + 2;
+            
             'witness: loop {
-                if witness.gcd(self) == 1 {
-                    break 'witness;
-                }
+
+                if witness.coprime(*self) {
+
+		  break 'witness;
+		}
+              
                 witness += 1;
             }
+              
+	   if !self.strong_fermat(witness){
+		return Certificate::new(*self,witness,fctrs)	
+	   }
 
-            if witness.exp_residue(&x_minus, self) != 1 {
-                // If any witness says it's composite then it is
-                certificate[0] = witness;
-
-                return (false, certificate);
-            }
-
-            'inner: for (idx, j) in fctrs.iter().enumerate() {
-                if witness.exp_residue(&((*self - 1) / j), self) == 1 {
+           
+            'inner: for (idx, i) in fctrs.iter().enumerate() {
+                if witness.exp_residue(*i, *self).is_unit(){
                     break 'inner;
                 }
                 if idx == fctrs.len() - 1 {
-                    certificate[0] = witness;
-
-                    return (true, certificate);
+                    return Certificate::new(*self,witness,fctrs);
                 }
             }
-        }
+	  }
     }
-
-    fn prime_list(&self, sup: &Self) -> Vec<Self> {
-        let inf = std::cmp::min(*self, *sup);
-        let mut hi = std::cmp::max(*self, *sup);
+    fn prime_list(&self, sup: Self) -> Vec<Self> {
+        let inf = std::cmp::min(*self, sup);
+        let mut hi = std::cmp::max(*self, sup);
 
         hi = hi.saturating_add(1);
 
@@ -180,11 +127,14 @@ impl NumberTheory for u128 {
         let mut count = 0u128;
         let mut start = 0u128;
         
-        
-        if *self < 425656284035217743{
-          return (*self as u64).nth_prime().map(|y| y as u128)
+/*        if *self < 203280221{
+          return (*self as u32).nth_prime().map(|y| y as u64)
         }
-       
+  */      
+        if *self > 425656284035217743{
+          return NTResult::Overflow
+        }
+    
         loop {
             start += 1;
 
@@ -199,13 +149,13 @@ impl NumberTheory for u128 {
             }
         }
     }
-    
+
     fn pi(&self) -> Self {
-     if  self.reducible(){
+      if  self.reducible(){
          return (*self as u64).pi() as u128
        }
-        let mut count = 0u128;
-        for i in 0u128..*self {
+        let mut count = 425656284035217743u128;
+        for i in (1u128<<64)..*self {
             if i.is_prime() {
                 count += 1;
             }
@@ -215,9 +165,9 @@ impl NumberTheory for u128 {
 
     fn prime_gen(k: u32) -> NTResult<Self> {
         if k > 128 {
-            return NTResult::Overflow;
+           return NTResult::Overflow;
         }
-        if k < 65 {
+        if k < 64 {
             return u64::prime_gen(k).map(|x| x as u128);
         }
         let form = (1 << (k - 1)) + 1;
@@ -231,70 +181,78 @@ impl NumberTheory for u128 {
         }
     }
 
-    fn factor(&self) -> Vec<Self> {
-        if self < &(u64::MAX as u128){
-          return (*self as u64).factor().iter().map(|x| *x as u128).collect::<Vec<u128>>()
+    fn factor(&self) -> NTResult<Factorization<Self>> {
+       // if self < &4294967295{
+       //   return (*self as u32).factor().iter().map(|x| *x as u64).collect::<Vec<u64>>()
+       // }
+        
+        if *self == 0{
+           return NTResult::InfiniteSet;
+        }
+        
+        if *self == 1{
+           return NTResult::DNE
         }
         let mut n = *self;
         let twofactors = n.trailing_zeros();
         n >>= twofactors;
 
-        let mut factors: Vec<u128> = vec![];
+        let mut factors: Factorization<u128> = Factorization::new();
 
         if twofactors > 0 {
-            factors.push(2u128);
-            factors.push(twofactors as u128);
+            factors.add_factor(2);
+            factors.add_power(twofactors as u64);
         }
 
         for i in PRIMELIST[1..].iter() {
             // strips out small primes
             if n % *i as u128 == 0 {
-                factors.push(*i as u128);
-                let mut count = 0u128;
+                factors.add_factor(*i as u128);
+                let mut count = 0u64;
                 while n % *i as u128 == 0 {
                     count += 1;
                     n /= *i as u128;
                 }
-                factors.push(count);
+                factors.add_power(count);
             }
         }
 
-        if n < u64::MAX as u128 {
-            //
-
-            let large_fact = (n as u64).factor();
-            for i in large_fact {
-                factors.push(i as u128)
-            }
-            factors
-        } else {
-            let large_fact = Mpz::from_u128(n).factor();
-
-            for i in large_fact {
-                factors.push(i.to_u128().unwrap())
-            }
-            factors
+        if n == 1 {
+            return  NTResult::Eval(factors);
         }
+
+        if n.is_prime() {
+            factors.add_factor(n);
+            factors.add_power(1);
+            return  NTResult::Eval(factors);
+        }
+
+        while n != 1 {
+            let k = poly_factor_128(n);
+            factors.add_factor(k);
+            let mut count = 0u64;
+            while n % k == 0 {
+                count += 1;
+                n /= k;
+            }
+            factors.add_power(count);
+            
+            if n.is_prime() {
+            factors.add_factor(n);
+            factors.add_power(1);
+            return  NTResult::Eval(factors);
+          }
+          
+        }
+        NTResult::Eval(factors)
     }
     
-    fn checked_factor(&self) -> NTResult<Vec<Self>>{    
-     if *self == 0{
-       return NTResult::InfiniteSet
-     }
-     if *self == 1{
-       return NTResult::DNE
-     }
-     
-     NTResult::Eval(self.factor())
-    }
-
 
 
     fn sqrt(&self) -> (Self, Self) {
-        if *self < 0x10000000000000000 {
-            return ((*self as u64).sqrt().0 as u128, 0);
-        }
-
+       // if *self < 0x100000000 {
+       //     return ((*self as u32).sqrt().0 as u64, 0);
+       // }
         let mut est = (*self as f64).sqrt() as Self + 1;
 
         loop {
@@ -302,72 +260,67 @@ impl NumberTheory for u128 {
             let t = s + *self / s;
             est = t >> 1;
             if est >= s {
-            if *self - (est*est) == 0{
-              return (est,0)
-            }
                 return (s, 0);
             }
         }
     }
 
-    fn nth_root(&self, n: &Self) -> (Self, Self) {
-        if *n > 127 {
+    fn nth_root(&self, n: Self) -> (Self, Self) {
+        if n > 63 {
             return (1, 0);
         }
 
-        if *n == 1 {
-            return (*n, 0);
+        if n == 1 {
+            return (n, 0);
         }
-        if *n == 0 {
+
+        if n == 0 {
             panic!("No integer is a zeroth factor ")
         }
-        
-        let mut est = (*self as f64).powf((*n as f64).recip()) as Self;
+
+        let mut est = (*self as f64).powf((n as f64).recip()) as Self + 1;
+
         loop {
             let s = est;
-            let t = (*n - 1) * s + *self / s.pow(*n as u32 - 1);
-            est = t / *n;
-            if est >= s{
+            let t = (n - 1) * s + *self / s.pow(n as u32 - 1);
+            est = t / n;
+            if est >= s {
                 return (s, 0);
             }
         }
     }
 
-  fn max_exp(&self) -> (Self,Self){
+    fn max_exp(&self) -> (Self,Self){
     
       for i in 1..128{
       let p = 128-i;
-      let base = self.nth_root(&p).0;
+      let base = self.nth_root(p).0;
          if base.pow(p as u32) == *self{
            return(base,p)
          }
       }
      (*self,1)
     }    
-
+    
     fn radical(&self) -> NTResult<Self> {
-       if self.reducible(){
+      if self.reducible(){
          return (*self as u64).radical().map(|kishum| kishum as u128)
       }
-        self.checked_factor().map(|y| y.iter().step_by(2).product::<Self>())
-    }
-    
-    fn k_free(&self, k: &Self) -> bool {
-       if self.reducible(){
-         return (*self as u64).k_free(&(*k as u64))
-      }
-        let factors = self.factor();
-        for (idx, el) in factors.iter().enumerate() {
-            if el == k && idx != 0 {
-                return false;
-            }
-        }
-        true
+        self.factor().map(|y| y.factor_iter().product::<Self>())
     }
 
-    fn gcd(&self, other: &Self) -> Self {
+    fn k_free(&self, k: Self) -> bool {
+       if self.reducible(){
+         return (*self as u64).k_free(k as u64)
+      }
+      // FIXME Remove unwrap
+        let factors = self.factor().unwrap();
+        factors.k_free(k as u64)
+    }
+
+    fn gcd(&self, other: Self) -> Self {
         let mut a = *self;
-        let mut b = *other;
+        let mut b = other;
         if b == 0 {
             return a;
         } else if a == 0 {
@@ -392,9 +345,9 @@ impl NumberTheory for u128 {
         }
     }
 
-    fn extended_gcd(&self, other: &Self) -> (Self, Self, Self) {
+    fn extended_gcd(&self, other: Self) -> (Self, Self, Self) {
         let mut gcd: u128 = *self;
-        let mut new_r: u128 = *other;
+        let mut new_r: u128 = other;
         let mut bezout_1: u128 = 1;
         let mut new_s: u128 = 0;
         let mut bezout_2: u128 = 0;
@@ -407,9 +360,9 @@ impl NumberTheory for u128 {
             gcd = temp;
 
             temp = new_s;
-            if bezout_1 < quotient.product_residue(&temp, other) {
+            if bezout_1 < quotient.product_residue(temp, other) {
                 // First bezout coefficient is computed over Z[q]
-                new_s = *other - (quotient.product_residue(&temp, other) - bezout_1)
+                new_s = other - (quotient.product_residue(temp, other) - bezout_1)
             } else {
                 new_s = bezout_1.wrapping_sub(quotient * temp);
             }
@@ -417,31 +370,27 @@ impl NumberTheory for u128 {
             bezout_1 = temp;
 
             temp = new_t;
-            if bezout_2 < quotient.product_residue(&temp, self) {
+            if bezout_2 < quotient.product_residue(temp, *self) {
                 // Second bezout coefficient is computed over Z[p]
-                new_t = *self - (quotient.product_residue(&temp, self) - bezout_2)
+                new_t = *self - (quotient.product_residue(temp, *self) - bezout_2)
             } else {
-                new_t = bezout_2.wrapping_sub(quotient.product_residue(&temp, self));
+                new_t = bezout_2.wrapping_sub(quotient.product_residue(temp, *self));
             }
             bezout_2 = temp
         }
         (gcd, bezout_1, bezout_2)
     }
 
-    fn lcm(&self, other: &Self) -> Self {
-       if self == &0 && other == &0{
-         return 0
-       }
-        let cf = self.gcd(other);
-        (*self / cf) * *other
+    fn coprime(&self, other: Self) -> bool{
+       self.gcd(other)==1
     }
-
-    fn checked_lcm(&self, other: &Self) -> NTResult<Self> {
-        if self == &0 && other == &0{
-         return NTResult::Eval(0)
-        }
+    
+    fn lcm(&self, other: Self) -> NTResult<Self> {
+        if self == &0 && other == 0{
+           return NTResult::Eval(0)
+         }
         let cf = self.gcd(other);
-        let (v, flag) = (*self / cf).overflowing_mul(*other);
+        let (v, flag) = (*self / cf).overflowing_mul(other);
         if flag {
             return NTResult::Overflow;
         }
@@ -449,43 +398,17 @@ impl NumberTheory for u128 {
     }
 
     fn euler_totient(&self) -> Self {
-      if *self < u64::MAX as u128{
+      if self.reducible(){
         return (*self as u64).euler_totient() as u128
       }
-        let factors = self.factor();
-        let numerator = factors
-            .iter()
-            .step_by(2)
-            .map(|x| x - 1u128)
-            .product::<u128>();
-        let denominator = factors.iter().step_by(2).product::<u128>();
+        let factors = self.factor().unwrap();
+        let numerator = factors.factor_iter().map(|x| x - 1u128).product::<u128>();
+        let denominator = factors.factor_iter().product::<u128>();
         (self / denominator) * numerator
     }
-    
-     fn carmichael_totient(&self) -> NTResult<Self>{
-     
-       if  *self < u64::MAX as u128{
-         return (*self as u64).carmichael_totient().map(|x| x as u128)
-       }
-       
-       let fctr = self.factor();
-       let base = fctr.iter().step_by(2).map(|z| *z).collect::<Vec<Self>>();
-       let mut result = 1;
-      for (idx,el) in base.iter().enumerate(){
-        if el == &2 && fctr[1] > 2{
-         let phi = ((el.pow(fctr[2*idx+1] as u32) /el) *(el-1)) /2;
-          result = result.lcm(&phi);
-        }
-       else{
-         let phi =  (el.pow(fctr[2*idx+1] as u32)/el)*(el-1);
-         result = result.lcm(&phi);
-       } 
-      }
-     NTResult::Eval(result)
-    }
 
-    fn jordan_totient(&self, k: &Self) -> NTResult<Self> {
-        if *k > u32::MAX as u128 {
+    fn jordan_totient(&self, k: Self) -> NTResult<Self> {
+        if k > u32::MAX as u128 {
             return NTResult::Overflow;
         }
         
@@ -493,7 +416,7 @@ impl NumberTheory for u128 {
            return NTResult::Eval(*self)
         }
         
-        let (coef, flag) = self.overflowing_pow(*k as u32);
+        let (coef, flag) = self.overflowing_pow(k as u32);
 
         if flag {
             return NTResult::CompOverflow;
@@ -502,8 +425,8 @@ impl NumberTheory for u128 {
         let mut denom = 1u128;
         let mut numer = 1u128;
 
-        for i in self.factor().iter().step_by(2) {
-            let pow = i.pow(*k as u32);
+        for i in self.factor().unwrap().factor_iter(){
+            let pow = i.pow(k as u32);
 
             denom *= pow;
 
@@ -512,101 +435,130 @@ impl NumberTheory for u128 {
 
         NTResult::Eval(numer * (coef / denom))
     }
-
-    fn dedekind_psi(&self, k: &Self) -> NTResult<Self> {
+    
+    fn exponent(&self) -> NTResult<Self>{ 
+    
+       if  self.reducible(){
+         return (*self as u64).exponent().map(|x| x as u128)
+       }
+       
+       if *self == 0{
+          return NTResult::Infinite;
+       }
+       let fctr = self.factor().unwrap();
+       let mut result = 1;
+       for i in 0..fctr.base.len(){
+       if fctr.base[0] == 2 && fctr.power[0] > 2{
+          let phi = 2u128<<(fctr.power[0]-1);
+          result=phi;
+       }
+       else{
+         let el = fctr.base[i];
+         let phi =  (el.pow(fctr.power[i] as u32)/el)*(el-1);
+         match result.lcm(phi){
+             NTResult::Overflow => {return NTResult::Overflow;},
+             NTResult::Eval(x) => result=x,
+             _=> (),
+         }
+       }
+       }
+              return NTResult::Eval(result);
+              }
+    fn dedekind_psi(&self, k: Self) -> NTResult<Self> {
         if *self == 0{
          return NTResult::Infinite
        }
+       
         let (k2, flag) = k.overflowing_shl(1);
         if flag {
             return NTResult::Overflow;
         }
-        self.jordan_totient(&k2).map(|y| y/self.jordan_totient(k).unwrap())
+        self.jordan_totient(k2).map(|y| y/self.jordan_totient(k).unwrap())
     }
 
-    fn quadratic_residue(&self, n: &Self) -> Self {
-        if n == &0 {
-           return self.wrapping_mul(*self)
+   fn quadratic_residue(&self, n: Self) -> Self {
+        if n == 0 {
+            return self.wrapping_mul(*self)
         }
-        if n.is_power_of_two() {
-            return self.wrapping_mul(*self) & (n - 1);
-        }
-        pow_128(*self, 2, *n)
+        ((*self as u128 * *self as u128) % n as u128) as Self
     }
     
-   fn checked_quadratic_residue(&self, n: &Self) -> NTResult<Self> {
-        if n == &0 {
+    fn checked_quadratic_residue(&self, n: Self) -> NTResult<Self> {
+        if n == 0 {
             return NTResult::from_option(self.checked_mul(*self),NTResult::Overflow)
         }
-        if n.is_power_of_two() {
-            return NTResult::Eval(self.wrapping_mul(*self) & (n - 1));
-        }
-        NTResult::Eval(pow_128(*self, 2, *n))
-    }
-
-    fn product_residue(&self, other: &Self, n: &Self) -> Self {
-        if n == &0 {
-            return self.wrapping_mul(*other)
-        }
-        if n.is_power_of_two() {
-            return self.wrapping_mul(*other) & (n - 1);
-        }
-        Mpz::from_u128(*self)
-            .ref_product(&Mpz::from_u128(*other))
-            .ref_euclidean(&Mpz::from_u128(*n))
-            .1
-            .to_u128()
-            .unwrap()
+        NTResult::Eval(((*self as u128 * *self as u128) % n as u128) as Self)
     }
     
-    fn checked_product_residue(&self, other: &Self, n: &Self) -> NTResult<Self>{
-        if n == &0 {
+
+    fn product_residue(&self, other: Self, n: Self) -> Self {
+        if n == 0 {
+            return self.wrapping_mul(other)
+        }
+        ((*self as u128 * other as u128) % n as u128) as Self
+    }
+    
+    fn checked_product_residue(&self, other: Self, n: Self) -> NTResult<Self> {
+        if n == 0 {
             return NTResult::from_option(self.checked_mul(*self),NTResult::Overflow)
         }
-        if n.is_power_of_two() {
-            return NTResult::Eval(self.wrapping_mul(*other) & (n - 1));
-        }
-        NTResult::Eval(Mpz::from_u128(*self)
-            .ref_product(&Mpz::from_u128(*other))
-            .ref_euclidean(&Mpz::from_u128(*n))
-            .1
-            .to_u128()
-            .unwrap())
+        NTResult::Eval(((*self as u128 * other as u128) % n as u128) as Self)
     }
 
-    fn exp_residue(&self, p: &Self, modulus: &Self) -> Self {
-        if modulus == &0 {
-            return self.pow(*p as u32);
+    fn exp_residue(&self, p: Self, modulus: Self) -> Self {
+    
+        if modulus == 0 {
+            return self.pow(p as u32);
         }
-        pow_128(*self, *p, *modulus)
+        
+        if modulus & 1 == 0 {
+        
+        let k = modulus.trailing_zeros() as u64;
+        let s = modulus >> k;
+
+        let reducer = (1 << k) - 1; // A shorthand for arithmetic over Z[2k]
+
+        let k_rem = self.even_pow(p,reducer);
+
+        let s_rem = self.odd_pow(p,s);
+        
+        let s_inv = s.inv_2()&reducer;
+    
+        let y = k_rem.wrapping_sub(s_rem).wrapping_mul(s_inv) & reducer;
+
+        s_rem + s * y
+    } else {
+        self.odd_pow(p,modulus)
+    }
     }
 
-    fn checked_exp_residue(&self, p: &Self, modulus: &Self) -> NTResult<Self> {
-        if modulus == &0 {
-            if *p > u32::MAX as u128 {
+    fn checked_exp_residue(&self, p: Self, modulus: Self) -> NTResult<Self> {
+        if modulus == 0 {
+            if  p > u32::MAX as u128 {
                 return NTResult::Overflow;
             }
-            match self.checked_pow(*p as u32) {
+            match self.checked_pow(p as u32) {
                 Some(x) => return NTResult::Eval(x),
                 None => return NTResult::Overflow,
             };
         }
-        NTResult::Eval(pow_128(*self, *p, *modulus))
+
+        NTResult::Eval(self.exp_residue(p,modulus))
     }
 
-    fn legendre(&self, p: &Self) -> i8 {
-        let k = self.exp_residue(&((*p - 1) >> 1), p);
+    fn legendre(&self, p: Self) -> i8 {
+        let k = self.exp_residue((p - 1) >> 1, p);
         if k == 1 {
             return 1;
         };
-        if k == *p - 1 {
+        if k == p - 1 {
             return -1;
         };
         0i8
     }
 
-    fn checked_legendre(&self, p: &Self) -> NTResult<i8> {
-        if p == &2 || !p.is_prime() {
+    fn checked_legendre(&self, p: Self) -> NTResult<i8> {
+        if p == 2 || !p.is_prime() {
             return NTResult::Undefined;
         }
         NTResult::Eval(self.legendre(p))
@@ -616,7 +568,7 @@ impl NumberTheory for u128 {
       if self.reducible(){
         return (*self as u64).liouville()
       }
-        let primeomega = self.factor()[1..].iter().step_by(2).sum::<Self>();
+        let primeomega = self.factor().unwrap().prime_omega();
         if primeomega & 1 == 0 {
             return 1;
         }
@@ -624,55 +576,53 @@ impl NumberTheory for u128 {
     }
     
     fn derivative(&self) -> NTResult<Self> {
-      if *self < 94 {
-         return (*self as u8).derivative().map(|y| y as Self)
-      }
-       let fctr = self.factor();
+      // if *self < 94 {
+      //   return (*self as u8).derivative().map(|y| y as Self)
+      // }
+       let fctr = self.factor().unwrap();
        let mut sum : u128 = 0;
        
-     for i in 0..fctr.len() / 2 {
-        match sum.checked_add(fctr[2 * i + 1] * (*self / fctr[2 * i])){
-          Some(x) => sum = x,
-          None => return NTResult::Overflow,
-        }
-      }
-    NTResult::Eval(sum)
-    }
+       for (power,base) in fctr.power_iter().zip(fctr.factor_iter()){
+          match sum.checked_add((*power as u128)*(*self/base)){
+            Some(x) => sum =x,
+            None => return NTResult::Overflow,
+          }
+       }
+       NTResult::Eval(sum)
+       }
 
     fn mangoldt(&self) -> f64 {
-      if self.reducible(){
-        return (*self as u64).mangoldt()
-      }
+     // if self.reducible(){
+     //   return (*self as u32).mangoldt()
+     // }
       let base = self.max_exp().0;
        if base.is_prime(){
          return (base as f64).ln()
        }
-        0f64
+       0f64
     }
     
     fn mobius(&self) -> i8 {
-    if self.reducible(){
-         return (*self as u64).mobius()
+     //if self.reducible(){
+     //   return (*self as u32).mobius()
+     // }
+      let fctr = self.factor().unwrap();
+     // if fctr.len() == 1{ // if only one factor then return -1
+     //    return -1
+     // }
+      if !fctr.k_free(2){
+         return 0;
       }
-      let fctr = self.factor();
-      if fctr.len() == 1{ // if only one factor then return -1
-         return -1
-      }
-      for i in 0..fctr.len()/2{
-        if fctr[2*i+1]  > 1{
-         return 0
-        }
-      }
-      let fctrsum = fctr[1..].iter().step_by(2).sum::<Self>();
+      let fctrsum = fctr.prime_omega();
       if fctrsum&1 == 1{// if odd number of factors and square free
         return -1
       }
-      return 1
+      1
     }
 
-    fn jacobi(&self, k: &Self) -> i8 {
+    fn jacobi(&self, k: Self) -> i8 {
         let mut n = *self;
-        let mut p = *k;
+        let mut p = k;
         let mut t = 1i8;
         n %= p;
 
@@ -698,29 +648,29 @@ impl NumberTheory for u128 {
         }
     }
 
-    fn checked_jacobi(&self, k: &Self) -> NTResult<i8> {
-        if k > &0 && *k % 2 == 1 {
+    fn checked_jacobi(&self, k: Self) -> NTResult<i8> {
+        if k > 0 && k % 2 == 1 {
             return NTResult::Eval(self.jacobi(k));
         }
         NTResult::Undefined
     }
     
-     fn kronecker(&self, k: &Self) -> i8{
+     fn kronecker(&self, k: Self) -> i8{
      let x = *self;
-     if *k == 0{
+     if k == 0{
       if x == 1{
          return 1
       }
      return 0
     }
-   if *k == 1{
+   if k == 1{
       return 1
    }
-   let fctr = k.factor();
+   let fctr = k.factor().unwrap();
    let mut start = 0;
    let mut res = 1;
    
-   if fctr[0] ==  2{
+   if fctr.base[0] ==  2{
      start = 1;
      if x&1 == 0{
      res = 0;
@@ -729,209 +679,106 @@ impl NumberTheory for u128 {
       res=1
      }
      else{
-       res = (-1i8).pow(fctr[1] as u32)
+       res = (-1i8).pow(fctr.power[0] as u32)
      }
    }
-   if fctr[0] == 2 && fctr.len() == 2{
+   if fctr.base[0] == 2 && fctr.base.len() == 1{
      return res
    }
-   for i in start..fctr.len()/2{
-     res*=self.legendre(&fctr[2*i]).pow(fctr[2*i+1] as u32);
+   for i in start..fctr.base.len(){
+     res*=self.legendre(fctr.base[i]).pow(fctr.power[i] as u32);
    }
    res
 }
 
-fn smooth(&self) -> NTResult<Self> {
+
+
+  fn smooth(&self) -> NTResult<Self> {
        if *self == 0{
          return NTResult::Infinite
        }
        if *self == 1{
         return NTResult::DNE
        }
-        let k = self.factor();
-        NTResult::Eval(k[k.len() - 2])
+       self.factor().map(|x| x.max())
+  
     }
     
     
 
-    fn is_smooth(&self, b: &Self) -> bool {
+    fn is_smooth(&self, b: Self) -> bool {
      match self.smooth(){
       NTResult::Infinite => false,
-      NTResult::Eval(x) => x <= *b, 
+      NTResult::Eval(x) => x <= b, 
       _=> false,
      }
    }
-}
-
-#[inline(always)]
-pub(crate) const fn split_to_u128(x: u128) -> (u128, u128) {
-    (split(x).1 as u128, split(x).0 as u128)
-}
-
-#[inline] // hi,lo
-pub const fn overflowing_add(lhs: (u128, u128), rhs: (u128, u128)) -> ((u128, u128), bool) {
-    let (lo, carry) = lhs.1.overflowing_add(rhs.1);
-    let (hi, of1) = lhs.0.overflowing_add(rhs.0);
-    let (hi, of2) = hi.overflowing_add(carry as u128);
-    ((hi, lo), of1 || of2)
-}
-
-pub fn u256mod128(lhs: (u128, u128), rhs: u128) -> u128 {
-    if lhs.0 < rhs {
-        // The result fits in 128 bits.
-        div_rem1(lhs, rhs).1
-    } else {
-        div_rem1((lhs.0 % rhs, lhs.1), rhs).1
+   
+    fn ord(&self, n: Self) -> NTResult<Self>{
+      let ord_2 = |a: u128, p: u128| -> u128{
+        let modulo = (1u128<<p)-1;
+        let mut b = a&modulo;
+   
+         if b == 1{
+            return 1;
+         }
+      for i in 1..p{
+         b = b.wrapping_mul(b)&modulo;
+         if b == 1{
+           return 1<<i;
+         }
     }
-}
+    return p;
+    };
 
-pub fn u256prod(lhs: u128, rhs: u128) -> (u128, u128) {
-    // hi,low
-    let ((x1, x0), (y1, y0)) = (split_to_u128(lhs), split_to_u128(rhs));
+// Given ord(a,p)  calculate ord(a,p^n)
+    let  pp_ord = |a: u128, b: u128, p: u128, e: u32| -> u128{
+     for i in 0..e+1{
+          if a.exp_residue(b*p.pow(i),p.pow(e)) ==1{
+             return b*p.pow(i);
+           }
+   }
+    return b*p.pow(e);
+    };
 
-    let z2 = x1 * y1;
-    let (c0, z0) = split_to_u128(x0 * y0);
-    let (c1, z1) = split_to_u128(x1 * y0 + c0);
-    let z2 = z2 + c1;
-    let (c1, z1) = split_to_u128(x0 * y1 + z1);
-
-    (z2 + c1, z0 | z1 << 64) // hi,lo returned
-}
-
-pub fn _u256sqr(x: u128) -> (u128, u128) {
-    // hi,low
-    let (x1, x0) = split_to_u128(x);
-
-    let z2 = x1 * x1;
-    let m = x1 * x0;
-    let (c0, z0) = split_to_u128(x0 * x0);
-    let (c1, z1) = split_to_u128(m + c0);
-    let z2 = z2 + c1;
-    let (c1, z1) = split_to_u128(m + z1);
-    (z2 + c1, z0 | z1 << 64)
-}
-
-fn _leading_zeros(pair: (u128, u128)) -> u32 {
-    //hi.lo
-    if pair.0 == 0 {
-        pair.1.leading_zeros() + 64
-    } else {
-        pair.0.leading_zeros()
-    }
-}
-
-fn mut_shl(pair: &mut (u128, u128), shift: u32) {
-    match shift {
-        0 => {}
-        s if s >= 128 => {
-            pair.0 = pair.1 << (s - 128);
-            pair.1 = 0;
-        }
-        s => {
-            pair.0 <<= s;
-            pair.0 |= pair.1 >> (128 - s);
-            pair.1 <<= s;
-        }
-    }
-}
-// which is all that is necessary until a faster optimization is constructed.
-// Any library that uses this function as a general euclidean function is to be considered critically broken.
-pub fn div_rem1(pair: (u128, u128), other: u128) -> (u128, u128) {
-    //takes hi,lo pair
-
-    const RADIX: u128 = 0x10000000000000000;
-
-    // Normalize the divisor.
-    let s = other.leading_zeros();
-    let d = other << s; // numerator, denominator
-    let mut zqk = pair;
-    mut_shl(&mut zqk, s);
-    let p = zqk;
-    let (d1, d0) = split_to_u128(d);
-    let (n1, n0) = split_to_u128(p.1); // split lower part of dividend
-
-    let (mut q1, mut rhat) = p.0.euclidean_div(&d1);
-
-    while q1 >= RADIX || q1 * d0 > RADIX * rhat + n1 {
-        q1 -= 1;
-        rhat += d1;
-        if rhat >= RADIX {
+    let p_ord = |a: u128, p: u128| -> u128{
+   
+   let fctr = (p-1).factor().unwrap();
+   
+   let mut m = p-1;
+   for i in fctr.pair_iter(){
+     for _ in 0..*i.1{
+          if a.exp_residue(m/ *i.0,p) == 1{
+            m = m/ *i.0;
+          }
+          else{
             break;
-        }
+          }
+     }
+  }
+ m
+};
+
+
+    if self.gcd(n) != 1{
+       return NTResult::DNE;
     }
-
-    let r21 =
-        p.0.wrapping_mul(RADIX)
-            .wrapping_add(n1)
-            .wrapping_sub(q1.wrapping_mul(d));
-
-    // Compute the second quotient digit q0.
-    let (mut q0, mut rhat) = r21.euclidean_div(&d1);
-
-    // q0 has at most error 2. No more than 2 iterations.
-    while q0 >= RADIX || q0 * d0 > RADIX * rhat + n0 {
-        q0 -= 1;
-        rhat += d1;
-        if rhat >= RADIX {
-            break;
+    let fctr = n.factor().unwrap();
+    let mut fullord = 1u128;
+    for i in fctr.pair_iter(){
+     let mut ord : Self;
+      if *i.0 == 2{
+         ord = ord_2(*self,*i.1 as u128);
+      }
+      else{
+        ord = p_ord(*self,*i.0);
+        if *i.1 > 1{
+           ord=pp_ord(*self,ord,*i.0,*i.1 as u32);
         }
+      }
+       fullord = fullord.lcm(ord).unwrap(); 
     }
-
-    let r = (r21
-        .wrapping_mul(RADIX)
-        .wrapping_add(n0)
-        .wrapping_sub(q0.wrapping_mul(d)))
-        >> s;
-    let q = q1 * RADIX + q0;
-    (q, r)
-}
-
-/*  Replacement function
-pub fn rem(pair: (u128,u128), other: u128) -> u128 {
-
-   const RADIX : u128 = 0x10000000000000000;
-
-   // Normalize the divisor.
-    let s = other.leading_zeros();
-    let n = other << s; // numerator, denominator
-    let mut zqk = pair;
-    mut_shl(&mut zqk, s);
-
-    let (n_hi, nlo) = split_to_u128(n);
-
-    let (hi_hi, hi_lo) = split(pair.0);
-
-    let (lo_hi, lo_lo) = split(pair.1);
-
-    let quo =  divide3by2(hi_hi, hi_lo, lo_hi, n_hi, n_lo);
-
+    NTResult::Eval(fullord)
+ }
 
 }
-
-*/
-
-fn detect_pseudo_128(x: u128) -> bool {
-    //
-    for i in 2..32 {
-        let fctr = 2 * i;
-        let sq = (x - 1) / fctr;
-        let k = sq.sqrt().0;
-        if ((k * k + k) * fctr + k + 1) == x {
-            return true;
-        }
-    }
-    false
-}
-
-fn jacobi_check_128(x: u128) -> bool {
-    let mut witness = 3u128;
-    loop {
-        if witness.jacobi(&x) == -1 {
-            break;
-        }
-        witness += 1;
-    }
-    x.is_sprp(&witness)
-}
-
-

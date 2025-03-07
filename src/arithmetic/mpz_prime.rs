@@ -6,12 +6,11 @@
 
 use crate::data::primes::PRIMELIST;
 
-use crate::traits::NumberTheory;
+use crate::ntrait::NumberTheory;
 use crate::Mpz;
 use crate::NTResult;
 
-use crate::arithmetic::sliceops::mod_slice;
-use crate::arithmetic::sliceops::sub_slice;
+use crate::arithmetic::sliceops::{mod_slice,sub_slice};
 
 
 impl Mpz {
@@ -57,7 +56,7 @@ impl Mpz {
     */
     pub fn sprp_check(&self, n: usize) -> bool {
         if self.len() < 2 {
-            return self.to_u64().unwrap().is_prime();
+            return u64::try_from(self.clone()).unwrap().is_prime();
         } // if fits into u64, reduce to 64-bit check
 
         if self.is_fermat() {
@@ -204,7 +203,7 @@ impl Mpz {
 
     pub(crate) fn llt(&self, p: u64) -> bool {
         // function will never be called in practical implementation as number-theory does not support the scale of computation needed to use it
-        let mut s = Mpz::from_u64(4);
+        let mut s = Mpz::from(4u64);
 
         for _ in 0..(p - 2) {
             s = s.ref_product(&s);
@@ -231,7 +230,7 @@ impl Mpz {
             let two = Mpz::two();
             safe.successor();
 
-            if two.exp_residue(&p, &safe) == Mpz::one() {
+            if two.exp_residue(p, safe.clone()) == Mpz::one() {
                 return Some(safe);
             }
         }
@@ -240,7 +239,7 @@ impl Mpz {
 
     pub(crate) fn jacobi_check_mpz(&self) -> bool {
         // Performs a check of the Jacobi
-        let mut witness = 3;
+        let mut witness = 3u64;
         loop {
             if fast_jacobi_mpz(self, witness) == -1 {
                 break;
@@ -248,8 +247,8 @@ impl Mpz {
             witness += 1;
         }
 
-        let witty = Mpz::from_u64(witness);
-        self.is_sprp(&witty)
+        let witty = Mpz::from(witness);
+        self.sprp(witty)
     }
 
 /// Returns an integer in the interval 2^(k-1);2^k  that can satisfy the Monier-Rabin bound of passing the Artjuhov-Selfridge test 
@@ -291,7 +290,7 @@ pub fn psp(k: usize) -> NTResult<Self>{
 }
 /// A weak fermat test
 pub fn fermat(&self, base: &Self) -> bool{
-  base.exp_residue(&self.ref_subtraction(&Mpz::one()),self).is_one()
+  base.exp_residue(self.ref_subtraction(&Mpz::one()),self.clone()).is_unit()
 }
 
 /// Deterministic primality test, reliant on GRH
@@ -301,14 +300,14 @@ pub fn miller(&self) -> bool{
    match self.to_u128(){
      Some(x) => {
        for i in 2..sup{
-         if !x.is_sprp(&(i as u128)){
+         if !x.strong_fermat(i as u128){
            return false
          }
        }
      }
      None => {
        for i in 2..sup{
-         if !self.is_sprp(&Mpz::from_u64(i)){
+         if !self.sprp(Mpz::from(i)){
            return false
          }
        }
@@ -322,7 +321,7 @@ pub fn miller(&self) -> bool{
 
 pub(crate) fn fast_jacobi_mpz(x: &Mpz, p: u64) -> i8 {
     let k = x.word_div(p).1;
-    k.jacobi(&p)
+    k.jacobi(p)
 }
 
   // detects if the number is in a common pseudoprime form 
@@ -341,13 +340,13 @@ pub(crate) fn detect_pseudo_mpz(x: &Mpz) -> bool {
     if threesqrt.sqr() == threeprod{
       return true
     }
-    xminus.inv_successor();
+    xminus.predecessor();
     
     
     for i in 1..16 {
         let sq = xminus.word_div(2 * i + 1).0.sqrt().0; // (k*k + k)*(2*i) + k + 1 == x
         let lhs = sq.ref_product(&sq).ref_addition(&sq);
-        let lhs2 = lhs.ref_product(&Mpz::from_u64(2 * i + 1));
+        let lhs2 = lhs.ref_product(&Mpz::from(2 * i + 1));
         if lhs.ref_addition(&lhs2).ref_addition(&Mpz::one()) == copy {
             return true;
         }

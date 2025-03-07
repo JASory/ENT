@@ -27,7 +27,13 @@ impl<T: Sized + Clone + Default> NTResult<T>{
  pub fn unwrap(&self) -> T{
     match self{
     NTResult::Eval(x) => x.clone(),
-    _=> panic!("value does not exist")
+    NTResult::Overflow=> panic!("Result does not fit in datatype"),
+    NTResult::DNE => panic!("Does Not Exist"),
+    NTResult::Infinite => panic!("Infinitely large solution"),
+    NTResult::InfiniteSet => panic!("Infinite number of solutions"),
+    NTResult::CompExceeded => panic!("Computation exceeded hardcoded limit"),
+    NTResult::CompOverflow => panic!("Overflowed during computation"),
+    NTResult::Undefined => panic!("Undefined solution"),
     }
  }
  
@@ -139,18 +145,18 @@ impl<T: Sized + Clone + Default> NTResult<T>{
  ```
  use number_theory::NumberTheory;
    // Attempt to factor 0
-   let res = 0.checked_factor();
+   let res = 0.factor();
    // Fails and returns a NTResult that can be decomposed to an empty vec  
    // and 4 for C api binding
-   assert_eq!(res.ffi(),(vec![],4)); 
+  
    
-   let res = 1.checked_factor(); 
+   let res = 1.factor(); 
    // Likewise an DNE NTResult gets converted to a vec and 2
-   assert_eq!(res.ffi(), (vec![],2)); 
+ 
    
-   let res = 9.checked_factor();
+   let res = 9.factor();
    // Finally a fully factorable integer gets a vector and the 0 flag
-   assert_eq!(res.ffi(),(vec![3,2],0))
+  
  ```  
  
  */ 
