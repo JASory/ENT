@@ -2,9 +2,7 @@
 
 Elementary Number Theory for Integers in Rust
 
-The fastest provably correct library for primality checking in the interval 0;2^64 + 2^49 that is publicly available. Algebraic definitions of primality and factorization are used, permitting checks like -127.is_prime() to return true and unique factorizations to be considered unsigned.Published as number-theory on crates.io
-
-
+Algebraic definitions of primality and factorization are used, permitting checks like -127.is_prime() to return true and unique factorizations to be considered unsigned.Published as number-theory on crates.io
 
 Currently implements these functions
 
@@ -19,8 +17,7 @@ Currently implements these functions
 - Integer radical
 - K-free
 - Quadratic and Exponential residues
-- Legendre symbol
-- Jacobi symbol
+- Legendre,Jacobi and Kronecker symbols
 - Smoothness checks
 
  Additionally this library has an implementation of the previous NT functions for arbitrary-precision integers, plus some elementary arithmetic.
